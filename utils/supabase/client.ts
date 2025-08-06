@@ -1,32 +1,47 @@
 import { createClient } from '@supabase/supabase-js';
-import { supabaseUrl, publicAnonKey, defaultConfig } from './info';
+import { projectId, publicAnonKey } from './info';
 
-// Create a single supabase client for interacting with your database
-export const supabase = createClient(supabaseUrl, publicAnonKey, defaultConfig);
+export const supabase = createClient(
+  `https://${projectId}.supabase.co`,
+  publicAnonKey
+);
 
-// Helper function to get the current session
-export const getCurrentSession = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  return { session, error };
+export type AuthUser = {
+  id: string;
+  email: string;
+  user_metadata: {
+    name?: string;
+  };
 };
 
-// Helper function to get the current user
-export const getCurrentUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  return { user, error };
-};
+export async function signIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  
+  if (error) throw error;
+  return data;
+}
 
-// Helper function to sign out
-export const signOut = async () => {
+export async function signOut() {
   const { error } = await supabase.auth.signOut();
-  return { error };
-};
+  if (error) throw error;
+}
 
-// Helper function to check if user is authenticated
-export const isAuthenticated = async () => {
-  const { session } = await getCurrentSession();
-  return !!session;
-};
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session) return null;
+  
+  return {
+    id: session.user.id,
+    email: session.user.email!,
+    user_metadata: session.user.user_metadata
+  };
+}
 
-// Export the client as default
-export default supabase;
+export async function getAccessToken(): Promise<string | null> {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session) return null;
+  return session.access_token;
+}

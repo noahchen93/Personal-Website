@@ -2,446 +2,349 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
-import { Alert, AlertDescription } from '../ui/alert';
-import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { interestsAPI } from '../../utils/api';
+import { getDefaultInterestsData } from '../../utils/cmsDefaults';
 import { 
-  Heart, ExternalLink, Image, Video, FileText, 
-  Camera, Music, Palette, Code, Book, Plane,
-  AlertCircle, Filter, Grid, List, Globe
+  Loader2, 
+  Heart, 
+  ExternalLink, 
+  Star, 
+  TrendingUp,
+  Camera,
+  Music,
+  Palette,
+  BookOpen,
+  Plane,
+  Code,
+  Gamepad2,
+  AlertCircle,
+  Filter
 } from 'lucide-react';
-import { fetchInterestsData } from '../../utils/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-interface InterestLink {
-  type: 'website' | 'social' | 'portfolio' | 'video';
-  url: string;
-  label: string;
-}
-
-interface InterestItem {
-  id: number;
-  category: string;
+interface Interest {
+  id: string;
   title: string;
+  category: string;
   description: string;
-  images: string[];
-  videos?: string[];
-  documents?: string[];
-  links: InterestLink[];
-  tags?: string[];
-  featured?: boolean;
+  level: string;
+  achievements: string[];
+  resources: string[];
 }
 
 export function InterestsSection() {
   const { language } = useLanguage();
-  const [interests, setInterests] = useState<InterestItem[]>([]);
+  const [interests, setInterests] = useState<Interest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usingFallback, setUsingFallback] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  const texts = {
-    zh: {
-      title: '兴趣爱好',
-      subtitle: '探索我的多元化兴趣和个人项目',
-      allCategories: '全部',
-      viewProject: '查看详情',
-      media: '媒体文件',
-      links: '相关链接',
-      featured: '精选',
-      noInterests: '暂无兴趣爱好',
-      loading: '正在加载兴趣信息...',
-      error: '加载失败，请稍后重试',
-      categories: {
-        '设计': '设计',
-        '摄影': '摄影',
-        '音乐': '音乐',
-        '编程': '编程',
-        '阅读': '阅读',
-        '旅行': '旅行',
-        '艺术': '艺术',
-        '技术': '技术'
-      }
-    },
-    en: {
-      title: 'Interests & Hobbies',
-      subtitle: 'Explore my diverse interests and personal projects',
-      allCategories: 'All',
-      viewProject: 'View Details',
-      media: 'Media Files',
-      links: 'Related Links',
-      featured: 'Featured',
-      noInterests: 'No interests available',
-      loading: 'Loading interests information...',
-      error: 'Failed to load data, please try again later',
-      categories: {
-        'Design': 'Design',
-        'Photography': 'Photography', 
-        'Music': 'Music',
-        'Programming': 'Programming',
-        'Reading': 'Reading',
-        'Travel': 'Travel',
-        'Art': 'Art',
-        'Technology': 'Technology'
-      }
-    }
-  };
-
-  const t = texts[language];
 
   useEffect(() => {
-    loadInterests();
+    loadInterestsData();
   }, [language]);
 
-  const loadInterests = async () => {
+  const loadInterestsData = async () => {
+    setLoading(true);
+    setError(null);
+    setUsingFallback(false);
+
     try {
-      setLoading(true);
-      setError(null);
+      const data = await interestsAPI.list(language, false);
       
-      const { data, error: fetchError } = await fetchInterestsData(language);
-      
-      if (fetchError) {
-        throw new Error(fetchError);
+      if (!data || data.length === 0) {
+        console.log('No CMS interests data available, using default data');
+        setInterests(getDefaultInterestsData(language));
+        setUsingFallback(true);
+      } else {
+        setInterests(Array.isArray(data) ? data : []);
       }
-      
-      setInterests(data || []);
-    } catch (err) {
-      console.error('Failed to load interests data:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      // Set fallback data
-      setInterests([]);
+    } catch (error) {
+      console.log('CMS not available, using default interests data:', error);
+      setInterests(getDefaultInterestsData(language));
+      setUsingFallback(true);
+      setError(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const categories = ['all', ...Array.from(new Set(interests.map(i => i.category)))];
-  const filteredInterests = selectedCategory === 'all' 
-    ? interests 
-    : interests.filter(i => i.category === selectedCategory);
+  const filteredInterests = interests.filter(interest => 
+    selectedCategory === 'all' || interest.category === selectedCategory
+  );
+
+  const categories = ['all', ...Array.from(new Set(interests.map(i => i.category).filter(Boolean)))];
 
   const getCategoryIcon = (category: string) => {
-    const icons = {
-      '设计': Palette,
-      'Design': Palette,
-      '摄影': Camera,
-      'Photography': Camera,
-      '音乐': Music,
-      'Music': Music,
-      '编程': Code,
-      'Programming': Code,
-      '阅读': Book,
-      'Reading': Book,
-      '旅行': Plane,
-      'Travel': Plane,
-      '艺术': Palette,
-      'Art': Palette,
-      '技术': Code,
-      'Technology': Code
-    };
-    return icons[category] || Heart;
+    switch (category.toLowerCase()) {
+      case '摄影':
+      case 'photography':
+        return <Camera className="w-5 h-5" />;
+      case '音乐':
+      case 'music':
+        return <Music className="w-5 h-5" />;
+      case '艺术':
+      case 'art':
+        return <Palette className="w-5 h-5" />;
+      case '阅读':
+      case 'reading':
+        return <BookOpen className="w-5 h-5" />;
+      case '旅行':
+      case 'travel':
+        return <Plane className="w-5 h-5" />;
+      case '技术':
+      case 'technology':
+        return <Code className="w-5 h-5" />;
+      case '游戏':
+      case 'gaming':
+        return <Gamepad2 className="w-5 h-5" />;
+      default:
+        return <Heart className="w-5 h-5" />;
+    }
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      '设计': 'bg-purple-100 text-purple-800 border-purple-200',
-      'Design': 'bg-purple-100 text-purple-800 border-purple-200',
-      '摄影': 'bg-blue-100 text-blue-800 border-blue-200',
-      'Photography': 'bg-blue-100 text-blue-800 border-blue-200',
-      '音乐': 'bg-pink-100 text-pink-800 border-pink-200',
-      'Music': 'bg-pink-100 text-pink-800 border-pink-200',
-      '编程': 'bg-green-100 text-green-800 border-green-200',
-      'Programming': 'bg-green-100 text-green-800 border-green-200',
-      '阅读': 'bg-amber-100 text-amber-800 border-amber-200',
-      'Reading': 'bg-amber-100 text-amber-800 border-amber-200',
-      '旅行': 'bg-cyan-100 text-cyan-800 border-cyan-200',
-      'Travel': 'bg-cyan-100 text-cyan-800 border-cyan-200',
-      '艺术': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'Art': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      '技术': 'bg-gray-100 text-gray-800 border-gray-200',
-      'Technology': 'bg-gray-100 text-gray-800 border-gray-200'
-    };
-    return colors[category] || 'bg-gray-100 text-gray-800 border-gray-200';
+  const getLevelColor = (level: string) => {
+    switch (level.toLowerCase()) {
+      case '初学者':
+      case 'beginner':
+        return 'bg-green-100 text-green-800';
+      case '中级':
+      case 'intermediate':
+        return 'bg-blue-100 text-blue-800';
+      case '高级':
+      case 'advanced':
+        return 'bg-purple-100 text-purple-800';
+      case '专业':
+      case 'professional':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
+
+  const texts = {
+    zh: {
+      loading: '加载中...',
+      interestsTitle: '兴趣爱好',
+      allCategories: '全部分类',
+      level: '水平程度',
+      achievements: '相关成就',
+      resources: '相关资源',
+      viewResource: '查看资源',
+      demo: '演示模式',
+      noInterests: '暂无兴趣展示',
+      interestsDescription: '除了专业工作，我还有着广泛的兴趣爱好。这些兴趣不仅丰富了我的个人生活，也为我的专业工作带来了更多的创意灵感。'
+    },
+    en: {
+      loading: 'Loading...',
+      interestsTitle: 'Interests & Hobbies',
+      allCategories: 'All Categories',
+      level: 'Skill Level',
+      achievements: 'Achievements',
+      resources: 'Resources',
+      viewResource: 'View Resource',
+      demo: 'Demo Mode',
+      noInterests: 'No interests to display',
+      interestsDescription: 'Beyond professional work, I have a wide range of interests and hobbies. These interests not only enrich my personal life but also bring more creative inspiration to my professional work.'
+    }
+  };
+
+  const t = texts[language];
 
   if (loading) {
     return (
-      <section className="py-20 bg-gradient-to-br from-rose-50 to-pink-100">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <Skeleton className="h-12 w-64 mx-auto mb-4" />
-            <Skeleton className="h-6 w-96 mx-auto" />
-          </div>
-          
-          <div className="mb-8 flex flex-wrap gap-4 justify-center">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-10 w-20" />
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="overflow-hidden">
-                <Skeleton className="h-48 w-full" />
-                <CardHeader>
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-20 w-full mb-4" />
-                  <div className="flex gap-2">
-                    {[1, 2].map((j) => (
-                      <Skeleton key={j} className="h-8 w-16" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span className="text-lg">{t.loading}</span>
         </div>
       </section>
     );
   }
 
-  if (error) {
+  const InterestCard = ({ interest }: { interest: Interest }) => {
+    const IconComponent = getCategoryIcon(interest.category);
+    
     return (
-      <section className="py-20 bg-gradient-to-br from-rose-50 to-pink-100">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-rose-100 text-rose-600 rounded-full mb-6">
-              <Heart className="w-8 h-8" />
+      <Card className="h-full hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              {IconComponent}
+              <CardTitle className="text-lg">{interest.title}</CardTitle>
             </div>
-            <h2 className="mb-4">{t.title}</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t.subtitle}
-            </p>
+            {interest.level && (
+              <Badge className={getLevelColor(interest.level)}>
+                {interest.level}
+              </Badge>
+            )}
           </div>
-          
-          <div className="max-w-2xl mx-auto">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {t.error}
-              </AlertDescription>
-            </Alert>
-          </div>
-        </div>
-      </section>
+          {interest.category && (
+            <Badge variant="outline" className="w-fit">
+              {interest.category}
+            </Badge>
+          )}
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          <p className="text-gray-700 leading-relaxed">
+            {interest.description}
+          </p>
+
+          {interest.achievements && interest.achievements.length > 0 && (
+            <div>
+              <div className="flex items-center mb-2">
+                <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                <span className="font-semibold text-gray-800">{t.achievements}</span>
+              </div>
+              <ul className="space-y-1">
+                {interest.achievements.map((achievement, index) => (
+                  <li key={index} className="text-sm text-gray-600 flex items-start">
+                    <span className="w-2 h-2 bg-yellow-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+                    <span>{achievement}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {interest.resources && interest.resources.length > 0 && (
+            <div>
+              <div className="flex items-center mb-2">
+                <ExternalLink className="w-4 h-4 mr-2 text-blue-500" />
+                <span className="font-semibold text-gray-800">{t.resources}</span>
+              </div>
+              <div className="space-y-2">
+                {interest.resources.map((resource, index) => (
+                  <div key={index}>
+                    {resource.startsWith('http') ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <a href={resource} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          {t.viewResource}
+                        </a>
+                      </Button>
+                    ) : (
+                      <p className="text-sm text-gray-600">{resource}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
-  }
+  };
 
   return (
-    <section className="py-20 bg-gradient-to-br from-rose-50 to-pink-100">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-rose-100 text-rose-600 rounded-full mb-6">
-            <Heart className="w-8 h-8" />
-          </div>
-          <h2 className="mb-4">{t.title}</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            {t.subtitle}
-          </p>
-        </div>
-
-        {/* Controls */}
-        <div className="mb-12 flex flex-col lg:flex-row gap-4 items-center justify-between max-w-7xl mx-auto">
-          {/* Category Filter */}
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => {
-              const IconComponent = getCategoryIcon(category);
-              return (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="flex items-center space-x-2"
-                >
-                  <IconComponent className="w-4 h-4" />
-                  <span>
-                    {category === 'all' ? t.allCategories : 
-                     (t.categories[category] || category)}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex gap-2 border rounded-lg p-1 bg-white">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Interests Grid/List */}
-        {filteredInterests.length === 0 ? (
-          <div className="text-center py-12">
-            <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">{t.noInterests}</p>
-          </div>
-        ) : (
-          <div className={`max-w-7xl mx-auto ${
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8' 
-              : 'space-y-8'
-          }`}>
-            {filteredInterests.map((interest) => {
-              const IconComponent = getCategoryIcon(interest.category);
-              return (
-                <Card 
-                  key={interest.id} 
-                  className={`overflow-hidden hover:shadow-lg transition-all duration-300 group ${
-                    interest.featured ? 'ring-2 ring-rose-200' : ''
-                  } ${viewMode === 'list' ? 'flex flex-col lg:flex-row' : ''}`}
-                >
-                  {/* Interest Image */}
-                  {interest.images.length > 0 && (
-                    <div className={`relative overflow-hidden ${
-                      viewMode === 'list' ? 'lg:w-80 lg:flex-shrink-0' : 'h-48'
-                    }`}>
-                      <ImageWithFallback
-                        src={interest.images[0]}
-                        alt={interest.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {interest.featured && (
-                        <Badge className="absolute top-2 left-2 bg-rose-600 text-white">
-                          {t.featured}
-                        </Badge>
-                      )}
-                      <div className={`absolute top-2 right-2 w-8 h-8 ${getCategoryColor(interest.category).replace('text-', 'text-white bg-').split(' ')[0]} rounded-lg flex items-center justify-center`}>
-                        <IconComponent className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className={`${viewMode === 'list' ? 'flex-1' : ''}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-lg leading-tight text-primary group-hover:text-rose-600 transition-colors">
-                          {interest.title}
-                        </CardTitle>
-                        <Badge variant="outline" className={getCategoryColor(interest.category)}>
-                          {interest.category}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      <p className="text-muted-foreground leading-relaxed">
-                        {interest.description}
-                      </p>
-
-                      {/* Tags */}
-                      {interest.tags && interest.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {interest.tags.slice(0, 4).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {interest.tags.length > 4 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{interest.tags.length - 4}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Media indicators */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        {interest.images.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Image className="w-4 h-4" />
-                            <span>{interest.images.length}</span>
-                          </div>
-                        )}
-                        {interest.videos && interest.videos.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Video className="w-4 h-4" />
-                            <span>{interest.videos.length}</span>
-                          </div>
-                        )}
-                        {interest.documents && interest.documents.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <FileText className="w-4 h-4" />
-                            <span>{interest.documents.length}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Links */}
-                      {interest.links.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {interest.links.map((link, index) => (
-                            <Button key={index} variant="outline" size="sm" asChild>
-                              <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1">
-                                {link.type === 'video' ? (
-                                  <Video className="w-4 h-4" />
-                                ) : (
-                                  <ExternalLink className="w-4 h-4" />
-                                )}
-                                <span>{link.label || t.viewProject}</span>
-                              </a>
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </div>
-                </Card>
-              );
-            })}
+    <section className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-20">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Demo Mode Indicator */}
+        {usingFallback && (
+          <div className="mb-6 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-sm">{t.demo}</span>
           </div>
         )}
 
-        {/* Summary */}
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{t.interestsTitle}</h1>
+          <div className="w-24 h-1 bg-blue-600 mx-auto mb-6"></div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            {t.interestsDescription}
+          </p>
+        </div>
+
+        {/* Category Filter */}
+        <div className="flex justify-center mb-8">
+          <div className="flex items-center space-x-4">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t.allCategories}</SelectItem>
+                {categories.filter(cat => cat !== 'all').map(category => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Interests Grid */}
+        {filteredInterests.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredInterests.map((interest) => (
+              <InterestCard key={interest.id} interest={interest} />
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{t.noInterests}</h3>
+              <p className="text-gray-600">
+                {selectedCategory !== 'all' 
+                  ? `当前分类 "${selectedCategory}" 下暂无兴趣`
+                  : '暂时还没有添加任何兴趣爱好'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Interest Statistics */}
         {filteredInterests.length > 0 && (
-          <div className="mt-16 text-center">
-            <Card className="border-0 bg-white/60 backdrop-blur-sm max-w-2xl mx-auto">
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-2xl font-bold text-rose-600 mb-1">
-                      {filteredInterests.length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {language === 'zh' ? '兴趣领域' : 'Interest Areas'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-purple-600 mb-1">
-                      {categories.length - 1}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {language === 'zh' ? '分类' : 'Categories'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-blue-600 mb-1">
-                      {filteredInterests.reduce((total, interest) => 
-                        total + interest.images.length + (interest.videos?.length || 0), 0
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {language === 'zh' ? '媒体文件' : 'Media Files'}
-                    </div>
-                  </div>
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {filteredInterests.length}
                 </div>
+                <div className="text-sm text-gray-600">兴趣爱好</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {categories.length - 1}
+                </div>
+                <div className="text-sm text-gray-600">兴趣分类</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {filteredInterests.reduce((total, interest) => 
+                    total + (interest.achievements?.length || 0), 0
+                  )}
+                </div>
+                <div className="text-sm text-gray-600">相关成就</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-orange-600 mb-2">
+                  {filteredInterests.filter(i => 
+                    i.level === '高级' || i.level === '专业' || i.level === 'advanced' || i.level === 'professional'
+                  ).length}
+                </div>
+                <div className="text-sm text-gray-600">高水平技能</div>
               </CardContent>
             </Card>
           </div>

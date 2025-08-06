@@ -1,30 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Alert, AlertDescription } from './ui/alert';
-import { useLanguage } from '../contexts/LanguageContext';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Label } from './ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Switch } from './ui/switch';
+import { Separator } from './ui/separator';
+import { toast } from 'sonner@2.0.3';
 import { 
-  Settings, Home, User, GraduationCap, Briefcase, 
-  FolderOpen, Heart, Mail, Save, RefreshCw,
-  AlertCircle, CheckCircle, Database, Globe, Cloud, 
-  Wifi, WifiOff, Clock, Activity, Signal
+  Upload, Edit, Trash2, Plus, Globe, User, 
+  FolderOpen, Heart, Home, GraduationCap, Briefcase, Mail, Palette, Image,
+  Save, Send, Copy
 } from 'lucide-react';
+import { ActionButtons, MediaUploadZone, MediaFileCard } from './cms/CMSComponents';
+import { ProjectForm } from './cms/ProjectForm';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { 
-  fetchHomeData, fetchProfileData, fetchEducationData,
-  fetchExperienceData, fetchProjectsData, fetchInterestsData,
-  fetchContactData, saveContent, setAccessToken, getConnectionStatus,
-  getLastSyncTime, getSyncQueueLength, addConnectionListener,
-  removeConnectionListener, forceReconnect
-} from '../utils/api';
-
-// Import all the enhanced editors
-import { EducationEditor } from './cms/EducationEditor';
-import { ExperienceEditor } from './cms/ExperienceEditor';
-import { ProjectsEditor } from './cms/ProjectsEditor';
-import { InterestsEditor } from './cms/InterestsEditor';
-import { ContactEditor } from './cms/ContactEditor';
-import { HomeEditor } from './cms/HomeEditor';
+  getDefaultHomeData, 
+  getDefaultProfileData, 
+  getDefaultEducationData,
+  getDefaultExperienceData,
+  getDefaultContactData,
+  getDefaultThemeData,
+  getDefaultSiteSettings
+} from '../utils/cmsDefaults';
 
 interface CMSDashboardProps {
   accessToken: string;
@@ -32,772 +35,1841 @@ interface CMSDashboardProps {
 }
 
 export function CMSDashboard({ accessToken, onLogout }: CMSDashboardProps) {
-  const { language } = useLanguage();
-  const [activeSection, setActiveSection] = useState('home');
+  const [activeTab, setActiveTab] = useState('home');
+  const [activeLanguage, setActiveLanguage] = useState<'zh' | 'en'>('zh');
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'checking' | 'syncing'>('checking');
-  const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
-  const [syncQueueLength, setSyncQueueLength] = useState<number>(0);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [showDrafts, setShowDrafts] = useState(true);
 
-  // Data states for different sections
-  const [homeData, setHomeData] = useState<any>({});
-  const [profileData, setProfileData] = useState<any>({});
-  const [educationData, setEducationData] = useState<any>([]);
-  const [experienceData, setExperienceData] = useState<any>([]);
-  const [projectsData, setProjectsData] = useState<any>([]);
-  const [interestsData, setInterestsData] = useState<any>([]);
-  const [contactData, setContactData] = useState<any>({});
+  // Content states
+  const [homeData, setHomeData] = useState(getDefaultHomeData('zh'));
+  const [profileData, setProfileData] = useState(getDefaultProfileData('zh'));
+  const [educationData, setEducationData] = useState(getDefaultEducationData('zh'));
+  const [experienceData, setExperienceData] = useState(getDefaultExperienceData('zh'));
+  const [contactData, setContactData] = useState(getDefaultContactData('zh'));
+  const [projects, setProjects] = useState([]);
+  const [interests, setInterests] = useState([]);
+  const [themeData, setThemeData] = useState(getDefaultThemeData());
+  const [siteSettings, setSiteSettings] = useState(getDefaultSiteSettings());
+  const [mediaFiles, setMediaFiles] = useState([]);
 
-  const texts = {
-    zh: {
-      title: '内容管理系统',
-      subtitle: '管理您的个人作品集内容',
-      home: '首页管理',
-      about: '关于我',
-      education: '教育背景',
-      experience: '工作经历',
-      projects: '项目案例',
-      interests: '兴趣爱好',
-      contact: '联系信息',
-      settings: '系统设置',
-      save: '保存更改',
-      saved: '已保存',
-      saving: '保存中...',
-      load: '刷新数据',
-      loading: '加载中...',
-      hasChanges: '有未保存的更改',
-      saveSuccess: '内容保存成功',
-      saveError: '保存失败，请重试',
-      loadError: '加载数据失败',
-      dataLoaded: '数据加载成功',
-      connected: '已连接',
-      offline: '离线',
-      checking: '检查中',
-      syncing: '同步中',
-      demoData: '演示数据',
-      apiStatus: 'API状态',
-      connectionStatus: '连接状态',
-      lastSync: '最后同步',
-      queuedItems: '待同步项目',
-      forceReconnect: '强制重连',
-      autoSave: '自动保存',
-      realTimeMode: '实时模式',
-      backendConnected: '后端服务已连接',
-      backendSyncing: '正在同步数据',
-      backendOffline: '后端服务离线',
-      realTimeSync: '实时同步已启用',
-      timeAgo: {
-        justNow: '刚刚',
-        secondsAgo: '秒前',
-        minutesAgo: '分钟前',
-        hoursAgo: '小时前'
-      }
-    },
-    en: {
-      title: 'Content Management System',
-      subtitle: 'Manage your personal portfolio content',
-      home: 'Home Management',
-      about: 'About Me',
-      education: 'Education',
-      experience: 'Experience',
-      projects: 'Projects',
-      interests: 'Interests',
-      contact: 'Contact',
-      settings: 'Settings',
-      save: 'Save Changes',
-      saved: 'Saved',
-      saving: 'Saving...',
-      load: 'Refresh Data',
-      loading: 'Loading...',
-      hasChanges: 'Unsaved changes',
-      saveSuccess: 'Content saved successfully',
-      saveError: 'Save failed, please try again',
-      loadError: 'Failed to load data',
-      dataLoaded: 'Data loaded successfully',
-      connected: 'Connected',
-      offline: 'Offline',
-      checking: 'Checking',
-      syncing: 'Syncing',
-      demoData: 'Demo Data',
-      apiStatus: 'API Status',
-      connectionStatus: 'Connection Status',
-      lastSync: 'Last Sync',
-      queuedItems: 'Queued Items',
-      forceReconnect: 'Force Reconnect',
-      autoSave: 'Auto Save',
-      realTimeMode: 'Real-time Mode',
-      backendConnected: 'Backend service connected',
-      backendSyncing: 'Syncing data',
-      backendOffline: 'Backend service offline',
-      realTimeSync: 'Real-time sync enabled',
-      timeAgo: {
-        justNow: 'just now',
-        secondsAgo: 'seconds ago',
-        minutesAgo: 'minutes ago',
-        hoursAgo: 'hours ago'
-      }
+  // Dialog states
+  const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const [showInterestDialog, setShowInterestDialog] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [editingInterest, setEditingInterest] = useState(null);
+
+  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+    const url = `https://${projectId}.supabase.co/functions/v1/make-server-c529659a${endpoint}`;
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error);
     }
+
+    return response.json();
   };
 
-  const t = texts[language];
+  const uploadFile = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const sections = [
-    { id: 'home', label: t.home, icon: Home, color: 'text-blue-600' },
-    { id: 'about', label: t.about, icon: User, color: 'text-green-600' },
-    { id: 'education', label: t.education, icon: GraduationCap, color: 'text-purple-600' },
-    { id: 'experience', label: t.experience, icon: Briefcase, color: 'text-orange-600' },
-    { id: 'projects', label: t.projects, icon: FolderOpen, color: 'text-pink-600' },
-    { id: 'interests', label: t.interests, icon: Heart, color: 'text-red-600' },
-    { id: 'contact', label: t.contact, icon: Mail, color: 'text-cyan-600' },
-    { id: 'settings', label: t.settings, icon: Settings, color: 'text-gray-600' }
-  ];
+    const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-c529659a/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+      body: formData,
+    });
 
-  // Connection status listener
-  const handleConnectionStatusChange = useCallback((status: string) => {
-    setConnectionStatus(status as any);
-    setLastSyncTime(getLastSyncTime());
-    setSyncQueueLength(getSyncQueueLength());
-  }, []);
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
 
-  // Set access token for API calls
+    return response.json();
+  };
+
   useEffect(() => {
-    setAccessToken(accessToken);
-  }, [accessToken]);
+    loadData();
+  }, [activeLanguage, showDrafts]);
 
-  // Setup connection monitoring
-  useEffect(() => {
-    addConnectionListener(handleConnectionStatusChange);
-    
-    // Initial status update
-    setConnectionStatus(getConnectionStatus());
-    setLastSyncTime(getLastSyncTime());
-    setSyncQueueLength(getSyncQueueLength());
-
-    // Regular status updates
-    const statusInterval = setInterval(() => {
-      setLastSyncTime(getLastSyncTime());
-      setSyncQueueLength(getSyncQueueLength());
-    }, 2000);
-
-    return () => {
-      removeConnectionListener(handleConnectionStatusChange);
-      clearInterval(statusInterval);
-    };
-  }, [handleConnectionStatusChange]);
-
-  // Load data on language change
-  useEffect(() => {
-    loadAllData();
-  }, [language]);
-
-  // Auto-save setup
-  useEffect(() => {
-    if (!autoSaveEnabled) return;
-
-    const autoSaveInterval = setInterval(() => {
-      if (hasChanges && connectionStatus === 'online') {
-        handleAutoSave();
-      }
-    }, 30000); // Auto-save every 30 seconds
-
-    return () => clearInterval(autoSaveInterval);
-  }, [hasChanges, connectionStatus, autoSaveEnabled]);
-
-  const loadAllData = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      console.log('Loading all CMS data...');
+      const draftsParam = showDrafts ? '?drafts=true' : '';
       
-      const [home, profile, education, experience, projects, interests, contact] = await Promise.all([
-        fetchHomeData(language),
-        fetchProfileData(language),
-        fetchEducationData(language),
-        fetchExperienceData(language),
-        fetchProjectsData(language),
-        fetchInterestsData(language),
-        fetchContactData(language)
+      const [
+        homeResponse,
+        profileResponse,
+        educationResponse,
+        experienceResponse,
+        contactResponse,
+        projectsResponse,
+        interestsResponse,
+        themeResponse,
+        settingsResponse,
+        mediaResponse
+      ] = await Promise.all([
+        apiCall(`/home/${activeLanguage}${draftsParam}`).catch(() => null),
+        apiCall(`/profile/${activeLanguage}${draftsParam}`).catch(() => null),
+        apiCall(`/education/${activeLanguage}${draftsParam}`).catch(() => null),
+        apiCall(`/experience/${activeLanguage}${draftsParam}`).catch(() => null),
+        apiCall(`/contact/${activeLanguage}${draftsParam}`).catch(() => null),
+        apiCall(`/projects/${activeLanguage}${draftsParam}`).catch(() => []),
+        apiCall(`/interests/${activeLanguage}${draftsParam}`).catch(() => []),
+        apiCall(`/theme${draftsParam}`).catch(() => null),
+        apiCall(`/settings/site${draftsParam}`).catch(() => null),
+        apiCall('/media').catch(() => [])
       ]);
 
-      // Set data with fallbacks
-      setHomeData(home.data || {});
-      setProfileData(profile.data || {});
-      setEducationData(education.data || []);
-      setExperienceData(experience.data || []);
-      setProjectsData(projects.data || []);
-      setInterestsData(interests.data || []);
-      setContactData(contact.data || {});
+      setHomeData({ ...getDefaultHomeData(activeLanguage), ...homeResponse });
+      setProfileData({ ...getDefaultProfileData(activeLanguage), ...profileResponse });
+      setEducationData({ ...getDefaultEducationData(activeLanguage), ...educationResponse });
+      setExperienceData({ ...getDefaultExperienceData(activeLanguage), ...experienceResponse });
+      setContactData({ ...getDefaultContactData(activeLanguage), ...contactResponse });
+      setProjects(Array.isArray(projectsResponse) ? projectsResponse : []);
+      setInterests(Array.isArray(interestsResponse) ? interestsResponse : []);
+      setThemeData({ ...getDefaultThemeData(), ...themeResponse });
+      setSiteSettings({ ...getDefaultSiteSettings(), ...settingsResponse });
+      setMediaFiles(Array.isArray(mediaResponse) ? mediaResponse : []);
 
-      console.log('All CMS data loaded successfully');
-      showMessage('success', t.dataLoaded);
     } catch (error) {
-      console.error('Failed to load CMS data:', error);
-      showMessage('error', t.loadError);
+      console.error('Failed to load data:', error);
+      toast.error('加载数据失败');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveSection = async (section: string, data: any) => {
-    setSaving(true);
+  const saveContent = async (section: string, data: any, status: 'draft' | 'published' = 'draft') => {
     try {
-      console.log(`Saving ${section} data:`, data);
+      const endpoint = section === 'theme' ? '/theme' : 
+                     section === 'settings' ? '/settings/site' :
+                     `/${section}/${activeLanguage}`;
       
-      const result = await saveContent(section, language, data);
+      await apiCall(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ ...data, status }),
+      });
+
+      const statusText = status === 'draft' ? '草稿保存成功' : '发布成功';
+      toast.success(statusText);
       
-      if (result.success) {
-        showMessage('success', t.saveSuccess);
-        setHasChanges(false);
-        
-        // Update local state immediately
-        switch (section) {
-          case 'home':
-            setHomeData(data);
-            break;
-          case 'about':
-            setProfileData(data);
-            break;
-          case 'education':
-            setEducationData(data);
-            break;
-          case 'experience':
-            setExperienceData(data);
-            break;
-          case 'projects':
-            setProjectsData(data);
-            break;
-          case 'interests':
-            setInterestsData(data);
-            break;
-          case 'contact':
-            setContactData(data);
-            break;
-        }
-      } else {
-        throw new Error(result.error || 'Save failed');
+      if (status === 'published') {
+        await loadData();
       }
     } catch (error) {
-      console.error('Failed to save:', error);
-      showMessage('error', t.saveError);
-    } finally {
-      setSaving(false);
+      console.error(`Failed to save ${section}:`, error);
+      toast.error('保存失败');
     }
   };
 
-  const handleAutoSave = async () => {
-    if (!hasChanges || connectionStatus !== 'online') return;
-
+  const deleteMediaFile = async (filename: string) => {
     try {
-      // Auto-save current section data
-      let currentData = null;
-      switch (activeSection) {
-        case 'home':
-          currentData = homeData;
-          break;
-        case 'about':
-          currentData = profileData;
-          break;
-        case 'education':
-          currentData = educationData;
-          break;
-        case 'experience':
-          currentData = experienceData;
-          break;
-        case 'projects':
-          currentData = projectsData;
-          break;
-        case 'interests':
-          currentData = interestsData;
-          break;
-        case 'contact':
-          currentData = contactData;
-          break;
-      }
-
-      if (currentData) {
-        const result = await saveContent(activeSection, language, currentData);
-        if (result.success) {
-          setHasChanges(false);
-          console.log(`Auto-saved ${activeSection} data`);
-        }
-      }
+      await apiCall(`/media/${filename}`, { method: 'DELETE' });
+      toast.success('文件删除成功');
+      await loadData();
     } catch (error) {
-      console.error('Auto-save failed:', error);
+      console.error('Failed to delete file:', error);
+      toast.error('删除失败');
     }
   };
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  const formatTimeAgo = (timestamp: number) => {
-    const now = Date.now();
-    const diff = Math.floor((now - timestamp) / 1000);
-
-    if (diff < 10) return t.timeAgo.justNow;
-    if (diff < 60) return `${diff} ${t.timeAgo.secondsAgo}`;
-    if (diff < 3600) return `${Math.floor(diff / 60)} ${t.timeAgo.minutesAgo}`;
-    return `${Math.floor(diff / 3600)} ${t.timeAgo.hoursAgo}`;
-  };
-
-  const getConnectionStatusColor = () => {
-    switch (connectionStatus) {
-      case 'online': return 'text-green-600';
-      case 'syncing': return 'text-blue-600';
-      case 'checking': return 'text-yellow-600';
-      default: return 'text-red-600';
+  const handleProjectSave = (projectData: any) => {
+    if (editingProject) {
+      const newProjects = projects.map(p => p.id === editingProject.id ? projectData : p);
+      setProjects(newProjects);
+    } else {
+      setProjects([...projects, projectData]);
     }
+    setEditingProject(null);
   };
 
-  const getConnectionStatusIcon = () => {
-    switch (connectionStatus) {
-      case 'online': return <Wifi className="w-4 h-4" />;
-      case 'syncing': return <RefreshCw className="w-4 h-4 animate-spin" />;
-      case 'checking': return <RefreshCw className="w-4 h-4 animate-spin" />;
-      default: return <WifiOff className="w-4 h-4" />;
+  const handleInterestSave = (interestData: any) => {
+    if (editingInterest) {
+      const newInterests = interests.map(i => i.id === editingInterest.id ? interestData : i);
+      setInterests(newInterests);
+    } else {
+      setInterests([...interests, interestData]);
     }
-  };
-
-  const getConnectionStatusText = () => {
-    switch (connectionStatus) {
-      case 'online': return t.backendConnected;
-      case 'syncing': return t.backendSyncing;
-      case 'checking': return t.checking;
-      default: return t.backendOffline;
-    }
-  };
-
-  const renderHomeEditor = () => (
-    <HomeEditor
-      data={homeData}
-      onSave={(data) => handleSaveSection('home', data)}
-      language={language}
-    />
-  );
-
-  const renderAboutEditor = () => (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            {language === 'zh' ? '个人简介' : 'Biography'}
-          </label>
-          <textarea
-            value={profileData.bio || ''}
-            onChange={(e) => {
-              setProfileData(prev => ({ ...prev, bio: e.target.value }));
-              setHasChanges(true);
-            }}
-            placeholder={language === 'zh' ? '输入详细的个人简介...' : 'Enter detailed biography...'}
-            rows={6}
-            className="w-full px-3 py-2 border border-border rounded-md bg-input-background text-foreground"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            {language === 'zh' ? '设计理念' : 'Philosophy'}
-          </label>
-          <textarea
-            value={profileData.philosophy || ''}
-            onChange={(e) => {
-              setProfileData(prev => ({ ...prev, philosophy: e.target.value }));
-              setHasChanges(true);
-            }}
-            placeholder={language === 'zh' ? '输入设计理念或工作哲学...' : 'Enter design philosophy or work beliefs...'}
-            rows={4}
-            className="w-full px-3 py-2 border border-border rounded-md bg-input-background text-foreground"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            {language === 'zh' ? '技能列表（每行一个）' : 'Skills (one per line)'}
-          </label>
-          <textarea
-            value={profileData.skills?.join('\n') || ''}
-            onChange={(e) => {
-              setProfileData(prev => ({ ...prev, skills: e.target.value.split('\n').filter(Boolean) }));
-              setHasChanges(true);
-            }}
-            placeholder={language === 'zh' ? 'UI/UX设计\n产品策划\n项目管理' : 'UI/UX Design\nProduct Strategy\nProject Management'}
-            rows={5}
-            className="w-full px-3 py-2 border border-border rounded-md bg-input-background text-foreground"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            {language === 'zh' ? '主要成就（每行一个）' : 'Achievements (one per line)'}
-          </label>
-          <textarea
-            value={profileData.achievements?.join('\n') || ''}
-            onChange={(e) => {
-              setProfileData(prev => ({ ...prev, achievements: e.target.value.split('\n').filter(Boolean) }));
-              setHasChanges(true);
-            }}
-            placeholder={language === 'zh' ? '主导完成20+个成功项目\n获得国际设计奖项认可' : 'Led 20+ successful projects\nReceived international design awards'}
-            rows={4}
-            className="w-full px-3 py-2 border border-border rounded-md bg-input-background text-foreground"
-          />
-        </div>
-      </div>
-
-      <Button
-        onClick={() => handleSaveSection('about', profileData)}
-        disabled={saving || !hasChanges}
-        className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-        size="lg"
-      >
-        {saving ? (
-          <>
-            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            {t.saving}
-          </>
-        ) : (
-          <>
-            <Save className="w-4 h-4 mr-2" />
-            {t.save}
-          </>
-        )}
-      </Button>
-    </div>
-  );
-
-  const renderSettingsEditor = () => (
-    <div className="space-y-6">
-      {/* Real-time Status Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Activity className="w-5 h-5 mr-2" />
-            {t.realTimeMode}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Connection Status */}
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className={`${getConnectionStatusColor()}`}>
-                {getConnectionStatusIcon()}
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{t.connectionStatus}</p>
-                <p className="text-sm text-muted-foreground">{getConnectionStatusText()}</p>
-              </div>
-            </div>
-            <Badge 
-              variant={connectionStatus === 'online' ? 'default' : 'secondary'} 
-              className={connectionStatus === 'online' ? 'bg-green-100 text-green-800' : ''}
-            >
-              <Signal className="w-3 h-3 mr-1" />
-              {connectionStatus === 'online' ? t.connected : 
-               connectionStatus === 'syncing' ? t.syncing :
-               connectionStatus === 'checking' ? t.checking : t.offline}
-            </Badge>
-          </div>
-
-          {/* Sync Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-3 bg-muted/20 rounded-lg">
-              <div className="flex items-center space-x-2 mb-1">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">{t.lastSync}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {formatTimeAgo(lastSyncTime)}
-              </p>
-            </div>
-
-            <div className="p-3 bg-muted/20 rounded-lg">
-              <div className="flex items-center space-x-2 mb-1">
-                <Database className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">{t.queuedItems}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {syncQueueLength} {language === 'zh' ? '项' : 'items'}
-              </p>
-            </div>
-          </div>
-
-          {/* Auto-save Toggle */}
-          <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
-            <div>
-              <p className="font-medium text-foreground">{t.autoSave}</p>
-              <p className="text-sm text-muted-foreground">
-                {language === 'zh' 
-                  ? '每30秒自动保存更改' 
-                  : 'Automatically save changes every 30 seconds'
-                }
-              </p>
-            </div>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoSaveEnabled}
-                onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-                className="sr-only"
-              />
-              <div className={`w-10 h-6 rounded-full transition-colors ${
-                autoSaveEnabled ? 'bg-primary' : 'bg-muted'
-              }`}>
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform mt-1 ${
-                  autoSaveEnabled ? 'translate-x-5' : 'translate-x-1'
-                }`} />
-              </div>
-            </label>
-          </div>
-
-          {/* Actions */}
-          <div className="flex space-x-3">
-            <Button
-              onClick={forceReconnect}
-              variant="outline"
-              size="sm"
-              disabled={connectionStatus === 'checking'}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${connectionStatus === 'checking' ? 'animate-spin' : ''}`} />
-              {t.forceReconnect}
-            </Button>
-
-            <Button
-              onClick={loadAllData}
-              variant="outline"
-              size="sm"
-              disabled={loading}
-            >
-              <Database className="w-4 h-4 mr-2" />
-              {t.load}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* System Info */}
-      <Alert className={`border-blue-200 bg-blue-50 ${connectionStatus === 'online' ? 'border-green-200 bg-green-50' : ''}`}>
-        <Activity className={`h-4 w-4 ${connectionStatus === 'online' ? 'text-green-600' : 'text-blue-600'}`} />
-        <AlertDescription className={connectionStatus === 'online' ? 'text-green-800' : 'text-blue-800'}>
-          {connectionStatus === 'online' 
-            ? t.realTimeSync
-            : (language === 'zh' 
-                ? '系统正在尝试连接后端服务器，所有更改将在连接恢复后自动同步。'
-                : 'System is attempting to connect to backend server. All changes will be automatically synced when connection is restored.'
-              )
-          }
-        </AlertDescription>
-      </Alert>
-    </div>
-  );
-
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'home':
-        return renderHomeEditor();
-      case 'about':
-        return renderAboutEditor();
-      case 'education':
-        return (
-          <EducationEditor
-            data={educationData}
-            onSave={(data) => handleSaveSection('education', data)}
-            language={language}
-          />
-        );
-      case 'experience':
-        return (
-          <ExperienceEditor
-            data={experienceData}
-            onSave={(data) => handleSaveSection('experience', data)}
-            language={language}
-          />
-        );
-      case 'projects':
-        return (
-          <ProjectsEditor
-            data={projectsData}
-            onSave={(data) => handleSaveSection('projects', data)}
-            language={language}
-          />
-        );
-      case 'interests':
-        return (
-          <InterestsEditor
-            data={interestsData}
-            onSave={(data) => handleSaveSection('interests', data)}
-            language={language}
-          />
-        );
-      case 'contact':
-        return (
-          <ContactEditor
-            data={contactData}
-            onSave={(data) => handleSaveSection('contact', data)}
-            language={language}
-          />
-        );
-      case 'settings':
-        return renderSettingsEditor();
-      default:
-        return renderHomeEditor();
-    }
+    setEditingInterest(null);
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-card border-r border-border min-h-screen">
-          <div className="p-6">
-            <div className="flex items-center space-x-2 mb-6">
-              <Settings className="w-6 h-6 text-primary" />
-              <div>
-                <h2 className="font-medium text-foreground">{t.title}</h2>
-                <p className="text-xs text-muted-foreground">{t.subtitle}</p>
-              </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-3xl font-bold text-gray-900">内容管理系统</h1>
+            <div className="flex items-center space-x-2">
+              <Globe className="w-4 h-4" />
+              <Select value={activeLanguage} onValueChange={(value: 'zh' | 'en') => setActiveLanguage(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="zh">中文</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            {/* Real-time Status Indicator */}
-            <Alert className={`mb-6 ${
-              connectionStatus === 'online' 
-                ? 'border-green-200 bg-green-50' 
-                : connectionStatus === 'syncing'
-                ? 'border-blue-200 bg-blue-50'
-                : connectionStatus === 'checking'
-                ? 'border-yellow-200 bg-yellow-50'
-                : 'border-red-200 bg-red-50'
-            }`}>
-              <div className={getConnectionStatusColor()}>
-                {getConnectionStatusIcon()}
-              </div>
-              <AlertDescription className={`text-xs ${
-                connectionStatus === 'online' 
-                  ? 'text-green-800' 
-                  : connectionStatus === 'syncing'
-                  ? 'text-blue-800'
-                  : connectionStatus === 'checking'
-                  ? 'text-yellow-800'
-                  : 'text-red-800'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span>{getConnectionStatusText()}</span>
-                  {syncQueueLength > 0 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {syncQueueLength}
-                    </Badge>
-                  )}
-                </div>
-                {autoSaveEnabled && connectionStatus === 'online' && (
-                  <div className="text-xs opacity-75 mt-1">
-                    {language === 'zh' ? '自动保存已启用' : 'Auto-save enabled'}
-                  </div>
-                )}
-              </AlertDescription>
-            </Alert>
-
-            {/* Section Navigation */}
-            <nav className="space-y-2">
-              {sections.map((section) => {
-                const IconComponent = section.icon;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                      activeSection === section.id
-                        ? 'bg-primary/10 text-primary border border-primary/20'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <IconComponent className={`w-4 h-4 ${section.color}`} />
-                    <span className="text-sm font-medium">{section.label}</span>
-                    {section.id === activeSection && hasChanges && (
-                      <div className="w-2 h-2 bg-accent rounded-full ml-auto" />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={showDrafts}
+                onCheckedChange={setShowDrafts}
+                id="show-drafts"
+              />
+              <Label htmlFor="show-drafts" className="text-sm">
+                {showDrafts ? '显示草稿' : '显示已发布'}
+              </Label>
+            </div>
           </div>
+          <Button onClick={onLogout} variant="outline">
+            退出登录
+          </Button>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-medium text-foreground">
-                  {sections.find(s => s.id === activeSection)?.label}
-                </h1>
-                <div className="flex items-center space-x-3 mt-2">
-                  {hasChanges && (
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {t.hasChanges}
-                    </Badge>
-                  )}
-                  {connectionStatus === 'online' && autoSaveEnabled && (
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      <Activity className="w-3 h-3 mr-1" />
-                      {t.realTimeMode}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              
-              <Button
-                onClick={loadAllData}
-                disabled={loading}
-                variant="outline"
-                size="sm"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    {t.loading}
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    {t.load}
-                  </>
-                )}
-              </Button>
-            </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-9">
+            <TabsTrigger value="home"><Home className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="profile"><User className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="education"><GraduationCap className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="experience"><Briefcase className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="projects"><FolderOpen className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="interests"><Heart className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="contact"><Mail className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="media"><Image className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="design"><Palette className="w-4 h-4" /></TabsTrigger>
+          </TabsList>
 
-            {/* Status Message */}
-            {message && (
-              <Alert className={`mb-6 ${message.type === 'error' ? 'border-destructive/20 bg-destructive/5' : 'border-green-200 bg-green-50'}`}>
-                {message.type === 'error' ? (
-                  <AlertCircle className="h-4 w-4 text-destructive" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                )}
-                <AlertDescription className={message.type === 'error' ? 'text-destructive' : 'text-green-800'}>
-                  {message.text}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Content Editor */}
+          {/* Home Section Management */}
+          <TabsContent value="home" className="space-y-6">
             <Card>
-              <CardContent className="p-6">
-                {loading ? (
-                  <div className="text-center py-12">
-                    <RefreshCw className="w-8 h-8 text-muted-foreground mx-auto mb-4 animate-spin" />
-                    <p className="text-muted-foreground">{t.loading}</p>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>首页内容管理</CardTitle>
+                  <CardDescription>
+                    当前编辑语言: {activeLanguage === 'zh' ? '中文' : 'English'}
+                  </CardDescription>
+                </div>
+                <ActionButtons 
+                  section="home"
+                  onSaveDraft={() => saveContent('home', homeData, 'draft')}
+                  onPublish={() => saveContent('home', homeData, 'published')}
+                />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Hero Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">英雄区域</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Label htmlFor="hero-title">主标题</Label>
+                      <Input
+                        id="hero-title"
+                        value={homeData.heroTitle || ''}
+                        onChange={(e) => setHomeData(prev => ({ ...prev, heroTitle: e.target.value }))}
+                        placeholder="例：Noah Chen"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hero-subtitle">副标题</Label>
+                      <Input
+                        id="hero-subtitle"
+                        value={homeData.heroSubtitle || ''}
+                        onChange={(e) => setHomeData(prev => ({ ...prev, heroSubtitle: e.target.value }))}
+                        placeholder="例：双语创意项目与展览经理"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hero-description">描述文字</Label>
+                      <Textarea
+                        id="hero-description"
+                        value={homeData.heroDescription || ''}
+                        onChange={(e) => setHomeData(prev => ({ ...prev, heroDescription: e.target.value }))}
+                        rows={3}
+                        placeholder="简短的个人介绍..."
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="background-image">背景图片URL</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          id="background-image"
+                          value={homeData.backgroundImage || ''}
+                          onChange={(e) => setHomeData(prev => ({ ...prev, backgroundImage: e.target.value }))}
+                          placeholder="背景图片URL"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = async (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) {
+                                try {
+                                  const result = await uploadFile(file);
+                                  setHomeData(prev => ({ ...prev, backgroundImage: result.url }));
+                                  toast.success('图片上传成功');
+                                } catch (error) {
+                                  toast.error('图片上传失败');
+                                }
+                              }
+                            };
+                            input.click();
+                          }}
+                        >
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {homeData.backgroundImage && (
+                        <img src={homeData.backgroundImage} alt="Background preview" className="mt-2 max-w-xs rounded" />
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  renderContent()
-                )}
+                </div>
+
+                <Separator />
+
+                {/* Stats Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">统计数据</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label htmlFor="stat-experience">工作经验</Label>
+                      <Input
+                        id="stat-experience"
+                        value={homeData.stats?.experience || ''}
+                        onChange={(e) => setHomeData(prev => ({ 
+                          ...prev, 
+                          stats: { ...prev.stats, experience: e.target.value }
+                        }))}
+                        placeholder="7+"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="stat-projects">项目经验</Label>
+                      <Input
+                        id="stat-projects"
+                        value={homeData.stats?.projects || ''}
+                        onChange={(e) => setHomeData(prev => ({ 
+                          ...prev, 
+                          stats: { ...prev.stats, projects: e.target.value }
+                        }))}
+                        placeholder="50+"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="stat-countries">工作国家</Label>
+                      <Input
+                        id="stat-countries"
+                        value={homeData.stats?.countries || ''}
+                        onChange={(e) => setHomeData(prev => ({ 
+                          ...prev, 
+                          stats: { ...prev.stats, countries: e.target.value }
+                        }))}
+                        placeholder="10+"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="stat-languages">工作语言</Label>
+                      <Input
+                        id="stat-languages"
+                        value={homeData.stats?.languages || ''}
+                        onChange={(e) => setHomeData(prev => ({ 
+                          ...prev, 
+                          stats: { ...prev.stats, languages: e.target.value }
+                        }))}
+                        placeholder="2"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Call to Actions */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">行动按钮</h3>
+                    <Button
+                      onClick={() => {
+                        setHomeData(prev => ({
+                          ...prev,
+                          callToActions: [...(prev.callToActions || []), { text: '', link: '', style: 'primary' }]
+                        }));
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加按钮
+                    </Button>
+                  </div>
+                  
+                  {(homeData.callToActions || []).map((cta, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="按钮文字"
+                          value={cta.text || ''}
+                          onChange={(e) => {
+                            const newCTAs = [...(homeData.callToActions || [])];
+                            newCTAs[index] = { ...newCTAs[index], text: e.target.value };
+                            setHomeData(prev => ({ ...prev, callToActions: newCTAs }));
+                          }}
+                        />
+                        <Input
+                          placeholder="链接地址"
+                          value={cta.link || ''}
+                          onChange={(e) => {
+                            const newCTAs = [...(homeData.callToActions || [])];
+                            newCTAs[index] = { ...newCTAs[index], link: e.target.value };
+                            setHomeData(prev => ({ ...prev, callToActions: newCTAs }));
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <Select 
+                          value={cta.style || 'primary'} 
+                          onValueChange={(value) => {
+                            const newCTAs = [...(homeData.callToActions || [])];
+                            newCTAs[index] = { ...newCTAs[index], style: value };
+                            setHomeData(prev => ({ ...prev, callToActions: newCTAs }));
+                          }}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="primary">主要</SelectItem>
+                            <SelectItem value="secondary">次要</SelectItem>
+                            <SelectItem value="outline">轮廓</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          onClick={() => {
+                            const newCTAs = (homeData.callToActions || []).filter((_, i) => i !== index);
+                            setHomeData(prev => ({ ...prev, callToActions: newCTAs }));
+                          }}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          删除
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Profile Management */}
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>个人信息管理</CardTitle>
+                  <CardDescription>
+                    当前编辑语言: {activeLanguage === 'zh' ? '中文' : 'English'}
+                  </CardDescription>
+                </div>
+                <ActionButtons 
+                  section="profile"
+                  onSaveDraft={() => saveContent('profile', profileData, 'draft')}
+                  onPublish={() => saveContent('profile', profileData, 'published')}
+                />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="bio">个人简介</Label>
+                  <Textarea
+                    id="bio"
+                    value={profileData.bio || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                    rows={6}
+                    placeholder="请输入个人简介..."
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Education section */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label>教育背景</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setProfileData(prev => ({
+                          ...prev,
+                          education: [...(prev.education || []), { institution: '', degree: '', period: '', description: '' }]
+                        }));
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加教育经历
+                    </Button>
+                  </div>
+                  
+                  {(profileData.education || []).map((edu, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="学校/机构"
+                          value={edu.institution || ''}
+                          onChange={(e) => {
+                            const newEducation = [...(profileData.education || [])];
+                            newEducation[index] = { ...newEducation[index], institution: e.target.value };
+                            setProfileData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                        />
+                        <Input
+                          placeholder="学位/专业"
+                          value={edu.degree || ''}
+                          onChange={(e) => {
+                            const newEducation = [...(profileData.education || [])];
+                            newEducation[index] = { ...newEducation[index], degree: e.target.value };
+                            setProfileData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                        />
+                      </div>
+                      <Input
+                        placeholder="时间期间"
+                        value={edu.period || ''}
+                        onChange={(e) => {
+                          const newEducation = [...(profileData.education || [])];
+                          newEducation[index] = { ...newEducation[index], period: e.target.value };
+                          setProfileData(prev => ({ ...prev, education: newEducation }));
+                        }}
+                      />
+                      <Textarea
+                        placeholder="详细描述"
+                        value={edu.description || ''}
+                        onChange={(e) => {
+                          const newEducation = [...(profileData.education || [])];
+                          newEducation[index] = { ...newEducation[index], description: e.target.value };
+                          setProfileData(prev => ({ ...prev, education: newEducation }));
+                        }}
+                        rows={3}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newEducation = (profileData.education || []).filter((_, i) => i !== index);
+                          setProfileData(prev => ({ ...prev, education: newEducation }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                {/* Experience section */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label>工作经历</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setProfileData(prev => ({
+                          ...prev,
+                          experience: [...(prev.experience || []), { company: '', position: '', period: '', description: '' }]
+                        }));
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加工作经历
+                    </Button>
+                  </div>
+                  
+                  {(profileData.experience || []).map((exp, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="公司/组织"
+                          value={exp.company || ''}
+                          onChange={(e) => {
+                            const newExperience = [...(profileData.experience || [])];
+                            newExperience[index] = { ...newExperience[index], company: e.target.value };
+                            setProfileData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                        />
+                        <Input
+                          placeholder="职位"
+                          value={exp.position || ''}
+                          onChange={(e) => {
+                            const newExperience = [...(profileData.experience || [])];
+                            newExperience[index] = { ...newExperience[index], position: e.target.value };
+                            setProfileData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                        />
+                      </div>
+                      <Input
+                        placeholder="时间期间"
+                        value={exp.period || ''}
+                        onChange={(e) => {
+                          const newExperience = [...(profileData.experience || [])];
+                          newExperience[index] = { ...newExperience[index], period: e.target.value };
+                          setProfileData(prev => ({ ...prev, experience: newExperience }));
+                        }}
+                      />
+                      <Textarea
+                        placeholder="工作描述"
+                        value={exp.description || ''}
+                        onChange={(e) => {
+                          const newExperience = [...(profileData.experience || [])];
+                          newExperience[index] = { ...newExperience[index], description: e.target.value };
+                          setProfileData(prev => ({ ...prev, experience: newExperience }));
+                        }}
+                        rows={3}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newExperience = (profileData.experience || []).filter((_, i) => i !== index);
+                          setProfileData(prev => ({ ...prev, experience: newExperience }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <Label>联系信息</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      placeholder="邮箱"
+                      value={profileData.contact?.email || ''}
+                      onChange={(e) => setProfileData(prev => ({
+                        ...prev,
+                        contact: { ...prev.contact, email: e.target.value }
+                      }))}
+                    />
+                    <Input
+                      placeholder="电话"
+                      value={profileData.contact?.phone || ''}
+                      onChange={(e) => setProfileData(prev => ({
+                        ...prev,
+                        contact: { ...prev.contact, phone: e.target.value }
+                      }))}
+                    />
+                    <Input
+                      placeholder="位置"
+                      value={profileData.contact?.location || ''}
+                      onChange={(e) => setProfileData(prev => ({
+                        ...prev,
+                        contact: { ...prev.contact, location: e.target.value }
+                      }))}
+                    />
+                    <Input
+                      placeholder="个人网站"
+                      value={profileData.contact?.website || ''}
+                      onChange={(e) => setProfileData(prev => ({
+                        ...prev,
+                        contact: { ...prev.contact, website: e.target.value }
+                      }))}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Education Management */}
+          <TabsContent value="education" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>教育背景管理</CardTitle>
+                  <CardDescription>
+                    当前编辑语言: {activeLanguage === 'zh' ? '中文' : 'English'}
+                  </CardDescription>
+                </div>
+                <ActionButtons 
+                  section="education"
+                  onSaveDraft={() => saveContent('education', educationData, 'draft')}
+                  onPublish={() => saveContent('education', educationData, 'published')}
+                />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Education entries */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">教育经历</h3>
+                    <Button
+                      onClick={() => {
+                        setEducationData(prev => ({
+                          ...prev,
+                          education: [...(prev.education || []), {
+                            institution: '',
+                            degree: '',
+                            major: '',
+                            period: '',
+                            gpa: '',
+                            achievements: [],
+                            courses: []
+                          }]
+                        }));
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加教育经历
+                    </Button>
+                  </div>
+                  
+                  {(educationData.education || []).map((edu, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="学校名称"
+                          value={edu.institution || ''}
+                          onChange={(e) => {
+                            const newEducation = [...(educationData.education || [])];
+                            newEducation[index] = { ...newEducation[index], institution: e.target.value };
+                            setEducationData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                        />
+                        <Input
+                          placeholder="学位"
+                          value={edu.degree || ''}
+                          onChange={(e) => {
+                            const newEducation = [...(educationData.education || [])];
+                            newEducation[index] = { ...newEducation[index], degree: e.target.value };
+                            setEducationData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <Input
+                          placeholder="专业"
+                          value={edu.major || ''}
+                          onChange={(e) => {
+                            const newEducation = [...(educationData.education || [])];
+                            newEducation[index] = { ...newEducation[index], major: e.target.value };
+                            setEducationData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                        />
+                        <Input
+                          placeholder="时间期间"
+                          value={edu.period || ''}
+                          onChange={(e) => {
+                            const newEducation = [...(educationData.education || [])];
+                            newEducation[index] = { ...newEducation[index], period: e.target.value };
+                            setEducationData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                        />
+                        <Input
+                          placeholder="GPA"
+                          value={edu.gpa || ''}
+                          onChange={(e) => {
+                            const newEducation = [...(educationData.education || [])];
+                            newEducation[index] = { ...newEducation[index], gpa: e.target.value };
+                            setEducationData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>成就（每行一个）</Label>
+                        <Textarea
+                          placeholder="请输入成就，每行一个"
+                          value={(edu.achievements || []).join('\n')}
+                          onChange={(e) => {
+                            const newEducation = [...(educationData.education || [])];
+                            newEducation[index] = { 
+                              ...newEducation[index], 
+                              achievements: e.target.value.split('\n').filter(a => a.trim()) 
+                            };
+                            setEducationData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>主要课程（每行一个）</Label>
+                        <Textarea
+                          placeholder="请输入主要课程，每行一个"
+                          value={(edu.courses || []).join('\n')}
+                          onChange={(e) => {
+                            const newEducation = [...(educationData.education || [])];
+                            newEducation[index] = { 
+                              ...newEducation[index], 
+                              courses: e.target.value.split('\n').filter(c => c.trim()) 
+                            };
+                            setEducationData(prev => ({ ...prev, education: newEducation }));
+                          }}
+                          rows={3}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newEducation = (educationData.education || []).filter((_, i) => i !== index);
+                          setEducationData(prev => ({ ...prev, education: newEducation }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                {/* Certifications */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">专业认证</h3>
+                    <Button
+                      onClick={() => {
+                        setEducationData(prev => ({
+                          ...prev,
+                          certifications: [...(prev.certifications || []), {
+                            name: '',
+                            issuer: '',
+                            date: '',
+                            credential: ''
+                          }]
+                        }));
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加认证
+                    </Button>
+                  </div>
+                  
+                  {(educationData.certifications || []).map((cert, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="认证名称"
+                          value={cert.name || ''}
+                          onChange={(e) => {
+                            const newCertifications = [...(educationData.certifications || [])];
+                            newCertifications[index] = { ...newCertifications[index], name: e.target.value };
+                            setEducationData(prev => ({ ...prev, certifications: newCertifications }));
+                          }}
+                        />
+                        <Input
+                          placeholder="颁发机构"
+                          value={cert.issuer || ''}
+                          onChange={(e) => {
+                            const newCertifications = [...(educationData.certifications || [])];
+                            newCertifications[index] = { ...newCertifications[index], issuer: e.target.value };
+                            setEducationData(prev => ({ ...prev, certifications: newCertifications }));
+                          }}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="获得日期"
+                          value={cert.date || ''}
+                          onChange={(e) => {
+                            const newCertifications = [...(educationData.certifications || [])];
+                            newCertifications[index] = { ...newCertifications[index], date: e.target.value };
+                            setEducationData(prev => ({ ...prev, certifications: newCertifications }));
+                          }}
+                        />
+                        <Input
+                          placeholder="证书编号/链接"
+                          value={cert.credential || ''}
+                          onChange={(e) => {
+                            const newCertifications = [...(educationData.certifications || [])];
+                            newCertifications[index] = { ...newCertifications[index], credential: e.target.value };
+                            setEducationData(prev => ({ ...prev, certifications: newCertifications }));
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newCertifications = (educationData.certifications || []).filter((_, i) => i !== index);
+                          setEducationData(prev => ({ ...prev, certifications: newCertifications }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Experience Management */}
+          <TabsContent value="experience" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>工作经历管理</CardTitle>
+                  <CardDescription>
+                    当前编辑语言: {activeLanguage === 'zh' ? '中文' : 'English'}
+                  </CardDescription>
+                </div>
+                <ActionButtons 
+                  section="experience"
+                  onSaveDraft={() => saveContent('experience', experienceData, 'draft')}
+                  onPublish={() => saveContent('experience', experienceData, 'published')}
+                />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Work Experience */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">工作经历</h3>
+                    <Button
+                      onClick={() => {
+                        setExperienceData(prev => ({
+                          ...prev,
+                          experience: [...(prev.experience || []), {
+                            company: '',
+                            position: '',
+                            location: '',
+                            period: '',
+                            description: '',
+                            achievements: [],
+                            technologies: []
+                          }]
+                        }));
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加工作经历
+                    </Button>
+                  </div>
+                  
+                  {(experienceData.experience || []).map((exp, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="公司名称"
+                          value={exp.company || ''}
+                          onChange={(e) => {
+                            const newExperience = [...(experienceData.experience || [])];
+                            newExperience[index] = { ...newExperience[index], company: e.target.value };
+                            setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                        />
+                        <Input
+                          placeholder="职位"
+                          value={exp.position || ''}
+                          onChange={(e) => {
+                            const newExperience = [...(experienceData.experience || [])];
+                            newExperience[index] = { ...newExperience[index], position: e.target.value };
+                            setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="工作地点"
+                          value={exp.location || ''}
+                          onChange={(e) => {
+                            const newExperience = [...(experienceData.experience || [])];
+                            newExperience[index] = { ...newExperience[index], location: e.target.value };
+                            setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                        />
+                        <Input
+                          placeholder="时间期间"
+                          value={exp.period || ''}
+                          onChange={(e) => {
+                            const newExperience = [...(experienceData.experience || [])];
+                            newExperience[index] = { ...newExperience[index], period: e.target.value };
+                            setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                        />
+                      </div>
+                      <Textarea
+                        placeholder="工作描述"
+                        value={exp.description || ''}
+                        onChange={(e) => {
+                          const newExperience = [...(experienceData.experience || [])];
+                          newExperience[index] = { ...newExperience[index], description: e.target.value };
+                          setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                        }}
+                        rows={3}
+                      />
+                      <div className="space-y-2">
+                        <Label>主要成就（每行一个）</Label>
+                        <Textarea
+                          placeholder="请输入主要成就，每行一个"
+                          value={(exp.achievements || []).join('\n')}
+                          onChange={(e) => {
+                            const newExperience = [...(experienceData.experience || [])];
+                            newExperience[index] = { 
+                              ...newExperience[index], 
+                              achievements: e.target.value.split('\n').filter(a => a.trim()) 
+                            };
+                            setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>技术栈（用逗号分隔）</Label>
+                        <Input
+                          placeholder="技术和工具，用逗号分隔"
+                          value={(exp.technologies || []).join(', ')}
+                          onChange={(e) => {
+                            const newExperience = [...(experienceData.experience || [])];
+                            newExperience[index] = { 
+                              ...newExperience[index], 
+                              technologies: e.target.value.split(',').map(t => t.trim()).filter(t => t) 
+                            };
+                            setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newExperience = (experienceData.experience || []).filter((_, i) => i !== index);
+                          setExperienceData(prev => ({ ...prev, experience: newExperience }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                {/* Skills */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">专业技能</h3>
+                    <Button
+                      onClick={() => {
+                        setExperienceData(prev => ({
+                          ...prev,
+                          skills: [...(prev.skills || []), {
+                            category: '',
+                            items: []
+                          }]
+                        }));
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加技能类别
+                    </Button>
+                  </div>
+                  
+                  {(experienceData.skills || []).map((skillCategory, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-4">
+                      <Input
+                        placeholder="技能类别"
+                        value={skillCategory.category || ''}
+                        onChange={(e) => {
+                          const newSkills = [...(experienceData.skills || [])];
+                          newSkills[index] = { ...newSkills[index], category: e.target.value };
+                          setExperienceData(prev => ({ ...prev, skills: newSkills }));
+                        }}
+                      />
+                      <Textarea
+                        placeholder="技能列表（用逗号分隔）"
+                        value={(skillCategory.items || []).join(', ')}
+                        onChange={(e) => {
+                          const newSkills = [...(experienceData.skills || [])];
+                          newSkills[index] = { ...newSkills[index], items: e.target.value.split(',').map(s => s.trim()).filter(s => s) };
+                          setExperienceData(prev => ({ ...prev, skills: newSkills }));
+                        }}
+                        rows={2}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newSkills = (experienceData.skills || []).filter((_, i) => i !== index);
+                          setExperienceData(prev => ({ ...prev, skills: newSkills }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Projects Management */}
+          <TabsContent value="projects" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>项目案例管理</CardTitle>
+                  <CardDescription>
+                    当前编辑语言: {activeLanguage === 'zh' ? '中文' : 'English'}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => {
+                      setEditingProject(null);
+                      setShowProjectDialog(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    添加项目
+                  </Button>
+                  <ActionButtons 
+                    section="projects"
+                    onSaveDraft={() => saveContent('projects', { projects }, 'draft')}
+                    onPublish={() => saveContent('projects', { projects }, 'published')}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {(projects || []).map((project, index) => (
+                    <div key={project.id || index} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{project.title || '未命名项目'}</h4>
+                          <p className="text-sm text-gray-600">{project.category} • {project.period}</p>
+                          <p className="text-sm mt-1">{project.description}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            onClick={() => {
+                              setEditingProject(project);
+                              setShowProjectDialog(true);
+                            }}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>确认删除</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  确定要删除项目 "{project.title}" 吗？此操作不可恢复。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>取消</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => {
+                                  const newProjects = projects.filter((_, i) => i !== index);
+                                  setProjects(newProjects);
+                                  toast.success('项目删除成功');
+                                }}>
+                                  删除
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!projects || projects.length === 0) && (
+                    <div className="text-center py-8 text-gray-500">
+                      还没有项目，点击"添加项目"开始创建
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Project Dialog */}
+            <ProjectForm
+              isOpen={showProjectDialog}
+              onClose={() => setShowProjectDialog(false)}
+              editingProject={editingProject}
+              onSave={handleProjectSave}
+            />
+          </TabsContent>
+
+          {/* Interests Management */}
+          <TabsContent value="interests" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>兴趣爱好管理</CardTitle>
+                  <CardDescription>
+                    当前编辑语言: {activeLanguage === 'zh' ? '中文' : 'English'}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => {
+                      setEditingInterest(null);
+                      setShowInterestDialog(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    添加兴趣
+                  </Button>
+                  <ActionButtons 
+                    section="interests"
+                    onSaveDraft={() => saveContent('interests', { interests }, 'draft')}
+                    onPublish={() => saveContent('interests', { interests }, 'published')}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(interests || []).map((interest, index) => (
+                    <div key={interest.id || index} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{interest.title || '未命名兴趣'}</h4>
+                          <p className="text-sm text-gray-600">{interest.category}</p>
+                          <p className="text-sm mt-1">{interest.description}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            onClick={() => {
+                              setEditingInterest(interest);
+                              setShowInterestDialog(true);
+                            }}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>确认删除</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  确定要删除兴趣 "{interest.title}" 吗？此操作不可恢复。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>取消</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => {
+                                  const newInterests = interests.filter((_, i) => i !== index);
+                                  setInterests(newInterests);
+                                  toast.success('兴趣删除成功');
+                                }}>
+                                  删除
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!interests || interests.length === 0) && (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      还没有兴趣爱好，点击"添加兴趣"开始创建
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Interest Dialog */}
+            <Dialog open={showInterestDialog} onOpenChange={setShowInterestDialog}>
+              <DialogContent className="max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>{editingInterest ? '编辑兴趣' : '添加兴趣'}</DialogTitle>
+                  <DialogDescription>
+                    填写兴趣爱好的详细信息
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target as HTMLFormElement);
+                  const interestData = {
+                    id: editingInterest?.id || Date.now().toString(),
+                    title: formData.get('title') as string,
+                    category: formData.get('category') as string,
+                    description: formData.get('description') as string,
+                    level: formData.get('level') as string,
+                    achievements: (formData.get('achievements') as string).split('\n').filter(a => a.trim()),
+                    resources: (formData.get('resources') as string).split('\n').filter(r => r.trim())
+                  };
+
+                  handleInterestSave(interestData);
+                  setShowInterestDialog(false);
+                  setEditingInterest(null);
+                  toast.success(editingInterest ? '兴趣更新成功' : '兴趣添加成功');
+                }} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="title">兴趣名称*</Label>
+                      <Input
+                        id="title"
+                        name="title"
+                        defaultValue={editingInterest?.title || ''}
+                        required
+                        placeholder="兴趣名称"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="category">兴趣类别</Label>
+                      <Select name="category" defaultValue={editingInterest?.category || ''}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择类别" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="艺术">艺术</SelectItem>
+                          <SelectItem value="音乐">音乐</SelectItem>
+                          <SelectItem value="运动">运动</SelectItem>
+                          <SelectItem value="技术">技术</SelectItem>
+                          <SelectItem value="阅读">阅读</SelectItem>
+                          <SelectItem value="旅行">旅行</SelectItem>
+                          <SelectItem value="摄影">摄影</SelectItem>
+                          <SelectItem value="其他">其他</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="description">详细描述</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      defaultValue={editingInterest?.description || ''}
+                      rows={3}
+                      placeholder="描述这个兴趣爱好"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="level">水平程度</Label>
+                    <Select name="level" defaultValue={editingInterest?.level || ''}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择水平" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="初学者">初学者</SelectItem>
+                        <SelectItem value="中级">中级</SelectItem>
+                        <SelectItem value="高级">高级</SelectItem>
+                        <SelectItem value="专业">专业</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="achievements">相关成就</Label>
+                    <Textarea
+                      id="achievements"
+                      name="achievements"
+                      defaultValue={editingInterest?.achievements?.join('\n') || ''}
+                      rows={2}
+                      placeholder="每行一个成就"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="resources">相关资源/链接</Label>
+                    <Textarea
+                      id="resources"
+                      name="resources"
+                      defaultValue={editingInterest?.resources?.join('\n') || ''}
+                      rows={2}
+                      placeholder="每行一个资源或链接"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setShowInterestDialog(false)}>
+                      取消
+                    </Button>
+                    <Button type="submit">
+                      {editingInterest ? '更新兴趣' : '添加兴趣'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* Contact Management */}
+          <TabsContent value="contact" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>联系信息管理</CardTitle>
+                  <CardDescription>
+                    当前编辑语言: {activeLanguage === 'zh' ? '中文' : 'English'}
+                  </CardDescription>
+                </div>
+                <ActionButtons 
+                  section="contact"
+                  onSaveDraft={() => saveContent('contact', contactData, 'draft')}
+                  onPublish={() => saveContent('contact', contactData, 'published')}
+                />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Basic Contact Info */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">基本联系信息</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="contact-email">邮箱</Label>
+                      <Input
+                        id="contact-email"
+                        value={contactData.contactInfo?.email || ''}
+                        onChange={(e) => setContactData(prev => ({
+                          ...prev,
+                          contactInfo: { ...prev.contactInfo, email: e.target.value }
+                        }))}
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-phone">电话</Label>
+                      <Input
+                        id="contact-phone"
+                        value={contactData.contactInfo?.phone || ''}
+                        onChange={(e) => setContactData(prev => ({
+                          ...prev,
+                          contactInfo: { ...prev.contactInfo, phone: e.target.value }
+                        }))}
+                        placeholder="+86 138 0000 0000"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-location">地址</Label>
+                      <Input
+                        id="contact-location"
+                        value={contactData.contactInfo?.location || ''}
+                        onChange={(e) => setContactData(prev => ({
+                          ...prev,
+                          contactInfo: { ...prev.contactInfo, location: e.target.value }
+                        }))}
+                        placeholder="城市, 国家"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-website">个人网站</Label>
+                      <Input
+                        id="contact-website"
+                        value={contactData.contactInfo?.website || ''}
+                        onChange={(e) => setContactData(prev => ({
+                          ...prev,
+                          contactInfo: { ...prev.contactInfo, website: e.target.value }
+                        }))}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-wechat">微信</Label>
+                      <Input
+                        id="contact-wechat"
+                        value={contactData.contactInfo?.wechat || ''}
+                        onChange={(e) => setContactData(prev => ({
+                          ...prev,
+                          contactInfo: { ...prev.contactInfo, wechat: e.target.value }
+                        }))}
+                        placeholder="微信号"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-linkedin">LinkedIn</Label>
+                      <Input
+                        id="contact-linkedin"
+                        value={contactData.contactInfo?.linkedin || ''}
+                        onChange={(e) => setContactData(prev => ({
+                          ...prev,
+                          contactInfo: { ...prev.contactInfo, linkedin: e.target.value }
+                        }))}
+                        placeholder="LinkedIn Profile URL"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Social Media */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">社交媒体</h3>
+                    <Button
+                      onClick={() => {
+                        setContactData(prev => ({
+                          ...prev,
+                          socialMedia: [...(prev.socialMedia || []), { platform: '', username: '', url: '' }]
+                        }));
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加社交媒体
+                    </Button>
+                  </div>
+                  
+                  {(contactData.socialMedia || []).map((social, index) => (
+                    <div key={index} className="p-4 border rounded-lg space-y-3">
+                      <div className="grid grid-cols-3 gap-4">
+                        <Input
+                          placeholder="平台名称"
+                          value={social.platform || ''}
+                          onChange={(e) => {
+                            const newSocialMedia = [...(contactData.socialMedia || [])];
+                            newSocialMedia[index] = { ...newSocialMedia[index], platform: e.target.value };
+                            setContactData(prev => ({ ...prev, socialMedia: newSocialMedia }));
+                          }}
+                        />
+                        <Input
+                          placeholder="用户名"
+                          value={social.username || ''}
+                          onChange={(e) => {
+                            const newSocialMedia = [...(contactData.socialMedia || [])];
+                            newSocialMedia[index] = { ...newSocialMedia[index], username: e.target.value };
+                            setContactData(prev => ({ ...prev, socialMedia: newSocialMedia }));
+                          }}
+                        />
+                        <Input
+                          placeholder="链接URL"
+                          value={social.url || ''}
+                          onChange={(e) => {
+                            const newSocialMedia = [...(contactData.socialMedia || [])];
+                            newSocialMedia[index] = { ...newSocialMedia[index], url: e.target.value };
+                            setContactData(prev => ({ ...prev, socialMedia: newSocialMedia }));
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newSocialMedia = (contactData.socialMedia || []).filter((_, i) => i !== index);
+                          setContactData(prev => ({ ...prev, socialMedia: newSocialMedia }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                {/* Collaboration Areas */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">合作领域</h3>
+                    <Button
+                      onClick={() => {
+                        setContactData(prev => ({
+                          ...prev,
+                          collaborationAreas: [...(prev.collaborationAreas || []), '']
+                        }));
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加合作领域
+                    </Button>
+                  </div>
+                  
+                  {(contactData.collaborationAreas || []).map((area, index) => (
+                    <div key={index} className="flex space-x-2">
+                      <Input
+                        placeholder="合作领域"
+                        value={area}
+                        onChange={(e) => {
+                          const newAreas = [...(contactData.collaborationAreas || [])];
+                          newAreas[index] = e.target.value;
+                          setContactData(prev => ({ ...prev, collaborationAreas: newAreas }));
+                        }}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const newAreas = (contactData.collaborationAreas || []).filter((_, i) => i !== index);
+                          setContactData(prev => ({ ...prev, collaborationAreas: newAreas }));
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Media Management Tab */}
+          <TabsContent value="media" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>媒体文件管理</CardTitle>
+                <CardDescription>管理所有上传的图片、音频、视频和文档文件</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Upload Section */}
+                  <MediaUploadZone 
+                    onFileSelect={async (files) => {
+                      for (const file of Array.from(files)) {
+                        try {
+                          await uploadFile(file);
+                          toast.success(`${file.name} 上传成功`);
+                        } catch (error) {
+                          toast.error(`${file.name} 上传失败`);
+                        }
+                      }
+                      await loadData(); // Refresh media list
+                    }}
+                  />
+
+                  {/* Media Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {(mediaFiles || []).map((file, index) => (
+                      <MediaFileCard
+                        key={index}
+                        file={file}
+                        onDelete={deleteMediaFile}
+                      />
+                    ))}
+                  </div>
+
+                  {(!mediaFiles || mediaFiles.length === 0) && (
+                    <div className="text-center py-8 text-gray-500">
+                      还没有上传任何文件
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Design/Theme Management */}
+          <TabsContent value="design" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>设计主题管理</CardTitle>
+                  <CardDescription>自定义网站的外观和样式</CardDescription>
+                </div>
+                <ActionButtons 
+                  section="theme"
+                  onSaveDraft={() => saveContent('theme', themeData, 'draft')}
+                  onPublish={() => saveContent('theme', themeData, 'published')}
+                />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Colors */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">颜色配置</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {Object.entries(themeData.colors || {}).map(([key, value]) => (
+                      <div key={key}>
+                        <Label htmlFor={`color-${key}`}>{key}</Label>
+                        <div className="flex space-x-2">
+                          <Input
+                            id={`color-${key}`}
+                            type="color"
+                            value={value}
+                            onChange={(e) => setThemeData(prev => ({
+                              ...prev,
+                              colors: { ...prev.colors, [key]: e.target.value }
+                            }))}
+                            className="w-16 h-10 rounded cursor-pointer"
+                          />
+                          <Input
+                            value={value}
+                            onChange={(e) => setThemeData(prev => ({
+                              ...prev,
+                              colors: { ...prev.colors, [key]: e.target.value }
+                            }))}
+                            placeholder="#000000"
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Typography */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">字体配置</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="heading-font">标题字体</Label>
+                      <Select 
+                        value={themeData.fonts?.heading || 'Inter'} 
+                        onValueChange={(value) => setThemeData(prev => ({
+                          ...prev,
+                          fonts: { ...prev.fonts, heading: value }
+                        }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Inter">Inter</SelectItem>
+                          <SelectItem value="Helvetica">Helvetica</SelectItem>
+                          <SelectItem value="Arial">Arial</SelectItem>
+                          <SelectItem value="Georgia">Georgia</SelectItem>
+                          <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="body-font">正文字体</Label>
+                      <Select 
+                        value={themeData.fonts?.body || 'Inter'} 
+                        onValueChange={(value) => setThemeData(prev => ({
+                          ...prev,
+                          fonts: { ...prev.fonts, body: value }
+                        }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Inter">Inter</SelectItem>
+                          <SelectItem value="Helvetica">Helvetica</SelectItem>
+                          <SelectItem value="Arial">Arial</SelectItem>
+                          <SelectItem value="Georgia">Georgia</SelectItem>
+                          <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Spacing */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">间距配置</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="container-width">容器最大宽度</Label>
+                      <Input
+                        id="container-width"
+                        value={themeData.spacing?.containerMaxWidth || ''}
+                        onChange={(e) => setThemeData(prev => ({
+                          ...prev,
+                          spacing: { ...prev.spacing, containerMaxWidth: e.target.value }
+                        }))}
+                        placeholder="1200px"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="section-padding">章节内边距</Label>
+                      <Input
+                        id="section-padding"
+                        value={themeData.spacing?.sectionPadding || ''}
+                        onChange={(e) => setThemeData(prev => ({
+                          ...prev,
+                          spacing: { ...prev.spacing, sectionPadding: e.target.value }
+                        }))}
+                        placeholder="4rem"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">预览</h3>
+                  <div 
+                    className="p-6 rounded-lg border-2 border-dashed"
+                    style={{
+                      backgroundColor: themeData.colors?.background,
+                      color: themeData.colors?.foreground,
+                      fontFamily: themeData.fonts?.body
+                    }}
+                  >
+                    <h1 
+                      style={{ 
+                        fontFamily: themeData.fonts?.heading, 
+                        color: themeData.colors?.primary 
+                      }}
+                    >
+                      标题样式预览
+                    </h1>
+                    <p>这是正文字体的预览效果。</p>
+                    <button 
+                      style={{ 
+                        backgroundColor: themeData.colors?.accent, 
+                        color: themeData.colors?.background,
+                        padding: '8px 16px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        marginTop: '8px'
+                      }}
+                    >
+                      按钮预览
+                    </button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

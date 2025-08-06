@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Card, CardContent } from './ui/card';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from './ui/sheet';
+import { Menu, Home, User, GraduationCap, Briefcase, FolderOpen, Heart, Mail, Settings } from 'lucide-react';
+import { LanguageToggle } from './LanguageToggle';
 import { useLanguage } from '../contexts/LanguageContext';
-import { 
-  Menu, X, Home, User, GraduationCap, Briefcase, 
-  FolderOpen, Heart, Mail, Settings, Globe, Languages
-} from 'lucide-react';
+
+const navigationItemsConfig = [
+  { key: 'home', href: '#home', icon: Home },
+  { key: 'about', href: '#about', icon: User },
+  { key: 'education', href: '#education', icon: GraduationCap },
+  { key: 'experience', href: '#experience', icon: Briefcase },
+  { key: 'projects', href: '#projects', icon: FolderOpen },
+  { key: 'interests', href: '#interests', icon: Heart },
+  { key: 'contact', href: '#contact', icon: Mail },
+];
 
 interface NavigationProps {
   activeSection: string;
@@ -15,177 +22,99 @@ interface NavigationProps {
   onAdminToggle?: () => void;
 }
 
-export function Navigation({ 
-  activeSection, 
-  onSectionChange, 
-  isAdmin = false, 
-  onAdminToggle 
-}: NavigationProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const { language, toggleLanguage } = useLanguage();
+export function Navigation({ activeSection, onSectionChange, isAdmin, onAdminToggle }: NavigationProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { t } = useLanguage();
 
-  const navItems = [
-    { id: 'home', label: language === 'zh' ? '首页' : 'Home', icon: Home },
-    { id: 'about', label: language === 'zh' ? '关于' : 'About', icon: User },
-    { id: 'education', label: language === 'zh' ? '教育' : 'Education', icon: GraduationCap },
-    { id: 'experience', label: language === 'zh' ? '经历' : 'Experience', icon: Briefcase },
-    { id: 'projects', label: language === 'zh' ? '项目' : 'Projects', icon: FolderOpen },
-    { id: 'interests', label: language === 'zh' ? '兴趣' : 'Interests', icon: Heart },
-    { id: 'contact', label: language === 'zh' ? '联系' : 'Contact', icon: Mail },
-  ];
-
-  const handleNavClick = (sectionId: string) => {
-    onSectionChange(sectionId);
-    setIsOpen(false);
+  const handleNavClick = (href: string) => {
+    onSectionChange(href.replace('#', ''));
+    setIsMobileMenuOpen(false);
   };
+
+  const NavContent = () => (
+    <nav className="space-y-2">
+      {navigationItemsConfig.map((item) => {
+        const Icon = item.icon;
+        const isActive = activeSection === item.href.replace('#', '');
+        return (
+          <button
+            key={item.key}
+            onClick={() => handleNavClick(item.href)}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+              isActive 
+                ? 'bg-primary text-primary-foreground' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
+          >
+            <Icon className="h-5 w-5" />
+            <span>{t(`nav.${item.key}`)}</span>
+          </button>
+        );
+      })}
+      
+      {onAdminToggle && (
+        <div className="pt-4 border-t border-border">
+          <button
+            onClick={onAdminToggle}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+              isAdmin 
+                ? 'bg-accent text-accent-foreground' 
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
+          >
+            <Settings className="h-5 w-5" />
+            <span>{isAdmin ? t('nav.exit-admin') : t('nav.admin')}</span>
+          </button>
+        </div>
+      )}
+    </nav>
+  );
 
   return (
     <>
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2"
-            >
-              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-            <h1 className="text-lg font-semibold text-gray-900">
-              {language === 'zh' ? '个人作品集' : 'Portfolio'}
-            </h1>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleLanguage}
-              className="p-2"
-            >
-              <Languages className="w-4 h-4" />
-              <span className="ml-1 text-xs">{language.toUpperCase()}</span>
-            </Button>
-            
-            {onAdminToggle && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onAdminToggle}
-                className="p-2"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg">
-            <nav className="py-2">
-              {navItems.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors ${
-                      activeSection === item.id
-                        ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <IconComponent className="w-5 h-5" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        )}
-      </header>
-
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:block fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-40">
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-bold text-gray-900">
-                {language === 'zh' ? '个人作品集' : 'Portfolio'}
-              </h1>
-              {isAdmin && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  {language === 'zh' ? '管理员' : 'Admin'}
-                </Badge>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleLanguage}
-                className="flex-1"
-              >
-                <Globe className="w-4 h-4 mr-2" />
-                {language === 'zh' ? '中文' : 'English'}
-              </Button>
-              
-              {onAdminToggle && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onAdminToggle}
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              )}
+      {/* Desktop Navigation */}
+      <aside className="hidden lg:block fixed left-0 top-0 h-full w-64 bg-card border-r border-border p-6">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl">{t('nav.title')}</h1>
+              <p className="text-muted-foreground mt-2 text-sm">{t('nav.subtitle')}</p>
             </div>
           </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 py-4">
-            <ul className="space-y-1 px-3">
-              {navItems.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => handleNavClick(item.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        activeSection === item.id
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <IconComponent className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
-            <Card>
-              <CardContent className="p-3">
-                <div className="text-center text-xs text-gray-500">
-                  <p>{language === 'zh' ? '© 2024 个人作品集' : '© 2024 Portfolio'}</p>
-                  <p className="mt-1">
-                    {language === 'zh' ? '版权所有' : 'All rights reserved'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex justify-end">
+            <LanguageToggle />
           </div>
         </div>
+        <NavContent />
       </aside>
+
+      {/* Mobile Navigation */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border p-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl">{t('nav.title')}</h1>
+          <div className="flex items-center space-x-2">
+            <LanguageToggle />
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64">
+                <SheetHeader>
+                  <SheetTitle className="text-left">
+                    <h1 className="text-2xl">{t('nav.title')}</h1>
+                    <p className="text-muted-foreground mt-2 text-sm">{t('nav.subtitle')}</p>
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 overflow-auto">
+                  <NavContent />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

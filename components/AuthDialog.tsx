@@ -3,565 +3,848 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
-import { useLanguage } from '../contexts/LanguageContext';
-import { 
-  Mail, Lock, User, Eye, EyeOff, AlertCircle, 
-  CheckCircle, Loader2, Shield, Key
-} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { toast } from 'sonner@2.0.3';
+import { Loader2, LogIn, UserPlus, Settings, AlertCircle, TestTube, Users, CheckCircle, Info, Server, ExternalLink } from 'lucide-react';
+import { authAPI } from '../utils/api';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 interface AuthDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAuthSuccess: (token: string) => void;
+  onAuthSuccess: (accessToken: string) => void;
 }
 
-// Offline-first demo authentication
-const DEMO_MODE = true; // Set to false when backend is ready
-const DEMO_USERS = [
-  { email: 'admin@example.com', password: 'admin123', name: 'Administrator', token: 'demo-admin-token' },
-  { email: 'demo@example.com', password: 'demo123', name: 'Demo User', token: 'demo-user-token' }
-];
-
 export function AuthDialog({ isOpen, onClose, onAuthSuccess }: AuthDialogProps) {
-  const { language } = useLanguage();
-  const [activeTab, setActiveTab] = useState('signin');
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'cms' | 'test' | 'backend'>('signin');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [testUsers, setTestUsers] = useState<any[]>([]);
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
 
-  const [signInData, setSignInData] = useState({
+  // 登录表单状态
+  const [signinData, setSigninData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
 
-  const [signUpData, setSignUpData] = useState({
+  // 注册表单状态
+  const [signupData, setSignupData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
 
-  const texts = {
-    zh: {
-      title: '管理员认证',
-      description: '请登录以访问内容管理系统，管理您的作品集内容',
-      signIn: '登录',
-      signUp: '注册',
-      email: '邮箱地址',
-      password: '密码',
-      confirmPassword: '确认密码',
-      name: '姓名',
-      signInButton: '登录',
-      signUpButton: '注册账户',
-      cancel: '取消',
-      emailPlaceholder: '请输入邮箱地址',
-      passwordPlaceholder: '请输入密码',
-      namePlaceholder: '请输入姓名',
-      confirmPasswordPlaceholder: '请再次输入密码',
-      showPassword: '显示密码',
-      hidePassword: '隐藏密码',
-      signUpSuccess: '注册成功！请使用新账户登录。',
-      passwordMismatch: '两次输入的密码不一致',
-      invalidEmail: '请输入有效的邮箱地址',
-      weakPassword: '密码至少需要6个字符',
-      requiredFields: '请填写所有必填字段',
-      adminAccess: '管理员权限',
-      secureLogin: '安全登录',
-      switchToSignUp: '没有账户？注册新账户',
-      switchToSignIn: '已有账户？立即登录',
-      userExists: '用户已存在，请直接登录',
-      authError: '邮箱或密码错误，请重试',
-      demoMode: '演示模式',
-      demoHint: '演示模式下，您可以使用以下测试账户',
-      demoCredentials: '测试账户：admin@example.com / admin123',
-      offlineMode: '离线模式已启用'
-    },
-    en: {
-      title: 'Admin Authentication',
-      description: 'Please log in to access the content management system and manage your portfolio content',
-      signIn: 'Sign In',
-      signUp: 'Sign Up',
-      email: 'Email Address',
-      password: 'Password',
-      confirmPassword: 'Confirm Password',
-      name: 'Full Name',
-      signInButton: 'Sign In',
-      signUpButton: 'Create Account',
-      cancel: 'Cancel',
-      emailPlaceholder: 'Enter your email address',
-      passwordPlaceholder: 'Enter your password',
-      namePlaceholder: 'Enter your full name',
-      confirmPasswordPlaceholder: 'Confirm your password',
-      showPassword: 'Show password',
-      hidePassword: 'Hide password',
-      signUpSuccess: 'Registration successful! Please sign in with your new account.',
-      passwordMismatch: 'Passwords do not match',
-      invalidEmail: 'Please enter a valid email address',
-      weakPassword: 'Password must be at least 6 characters',
-      requiredFields: 'Please fill in all required fields',
-      adminAccess: 'Admin Access',
-      secureLogin: 'Secure Login',
-      switchToSignUp: 'No account? Create new account',
-      switchToSignIn: 'Have an account? Sign in now',
-      userExists: 'User already exists, please sign in instead',
-      authError: 'Invalid email or password, please try again',
-      demoMode: 'Demo Mode',
-      demoHint: 'In demo mode, you can use the following test accounts',
-      demoCredentials: 'Test Account: admin@example.com / admin123',
-      offlineMode: 'Offline mode enabled'
+  const clearMessages = () => {
+    setError('');
+    setSuccess('');
+  };
+
+  // Check backend status
+  const checkBackendStatus = async () => {
+    setBackendStatus('checking');
+    try {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-c529659a/health`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${publicAnonKey}`,
+        },
+      });
+      
+      if (response.ok) {
+        setBackendStatus('available');
+        return true;
+      } else {
+        setBackendStatus('unavailable');
+        return false;
+      }
+    } catch (error) {
+      console.log('Backend health check failed:', error);
+      setBackendStatus('unavailable');
+      return false;
     }
   };
 
-  const t = texts[language];
+  React.useEffect(() => {
+    if (isOpen) {
+      checkBackendStatus();
+    }
+  }, [isOpen]);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    if (!signInData.email || !signInData.password) {
-      setError(t.requiredFields);
-      return;
-    }
-
-    if (!validateEmail(signInData.email)) {
-      setError(t.invalidEmail);
-      return;
-    }
-
     setLoading(true);
+    clearMessages();
+
+    const isBackendAvailable = await checkBackendStatus();
+    if (!isBackendAvailable) {
+      setError('CMS后端服务不可用，请检查Supabase Functions是否正在运行');
+      setActiveTab('backend');
+      setLoading(false);
+      return;
+    }
 
     try {
-      if (DEMO_MODE) {
-        // Demo/offline authentication
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+      const response = await authAPI.signin(signinData.email, signinData.password);
+      
+      if (response.session?.access_token) {
+        toast.success('登录成功');
+        onAuthSuccess(response.session.access_token);
+        onClose();
         
-        const demoUser = DEMO_USERS.find(
-          user => user.email === signInData.email && user.password === signInData.password
-        );
-
-        if (demoUser) {
-          console.log('Demo authentication successful for:', demoUser.name);
-          onAuthSuccess(demoUser.token);
-          onClose();
-          resetForm();
-        } else {
-          throw new Error(t.authError);
-        }
+        // 重置表单
+        setSigninData({ email: '', password: '' });
       } else {
-        // Real authentication would go here
-        throw new Error('Backend authentication not implemented');
+        throw new Error('无法获取访问令牌');
       }
     } catch (error: any) {
-      console.error('Sign in error:', error);
-      setError(error.message || t.authError);
+      console.error('Signin error:', error);
+      let errorMessage = '登录失败，请检查邮箱和密码';
+      
+      if (error.message.includes('Backend not available')) {
+        errorMessage = 'CMS后端服务不可用，请先启动Supabase Functions';
+        setActiveTab('backend');
+      } else if (error.message.includes('Invalid login credentials')) {
+        errorMessage = '邮箱或密码错误，请检查后重试';
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = '邮箱未验证，请检查邮箱并点击验证链接';
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = '请求过于频繁，请稍后重试';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    if (!signUpData.name || !signUpData.email || !signUpData.password || !signUpData.confirmPassword) {
-      setError(t.requiredFields);
-      return;
-    }
-
-    if (!validateEmail(signUpData.email)) {
-      setError(t.invalidEmail);
-      return;
-    }
-
-    if (signUpData.password.length < 6) {
-      setError(t.weakPassword);
-      return;
-    }
-
-    if (signUpData.password !== signUpData.confirmPassword) {
-      setError(t.passwordMismatch);
-      return;
-    }
-
     setLoading(true);
+    clearMessages();
+
+    const isBackendAvailable = await checkBackendStatus();
+    if (!isBackendAvailable) {
+      setError('CMS后端服务不可用，请检查Supabase Functions是否正在运行');
+      setActiveTab('backend');
+      setLoading(false);
+      return;
+    }
+
+    // 验证密码确认
+    if (signupData.password !== signupData.confirmPassword) {
+      setError('密码确认不匹配');
+      setLoading(false);
+      return;
+    }
+
+    // 验证密码强度
+    if (signupData.password.length < 6) {
+      setError('密码长度至少为6位');
+      setLoading(false);
+      return;
+    }
 
     try {
-      if (DEMO_MODE) {
-        // Demo/offline registration
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-        
-        const existingUser = DEMO_USERS.find(user => user.email === signUpData.email);
-        if (existingUser) {
-          setError(t.userExists);
-          setActiveTab('signin');
-          setSignInData({ email: signUpData.email, password: '' });
-          return;
-        }
-
-        // Simulate successful registration
-        console.log('Demo user registered:', signUpData.name, signUpData.email);
-        
-        // Add to demo users for this session
-        DEMO_USERS.push({
-          email: signUpData.email,
-          password: signUpData.password,
-          name: signUpData.name,
-          token: `demo-token-${Date.now()}`
-        });
-
-        setSuccess(t.signUpSuccess);
+      const response = await authAPI.signup(signupData.email, signupData.password, signupData.name);
+      
+      if (response.user) {
+        toast.success('注册成功！账户已自动激活，请直接登录');
+        setSuccess('注册成功！请切换到登录页面使用您的账户信息登录。');
         setActiveTab('signin');
-        setSignInData({ email: signUpData.email, password: '' });
-        setSignUpData({ name: '', email: '', password: '', confirmPassword: '' });
-      } else {
-        // Real registration would go here
-        throw new Error('Backend registration not implemented');
+        setSigninData({ email: signupData.email, password: '' });
+        
+        // 重置表单
+        setSignupData({ name: '', email: '', password: '', confirmPassword: '' });
       }
     } catch (error: any) {
-      console.error('Sign up error:', error);
-      setError(error.message || 'Registration failed');
+      console.error('Signup error:', error);
+      
+      // 尝试解析错误响应
+      let errorData = null;
+      try {
+        if (error.message.startsWith('API Error')) {
+          const errorText = error.message.split('): ')[1];
+          errorData = JSON.parse(errorText);
+        }
+      } catch (parseError) {
+        // 解析失败，使用原始错误消息
+      }
+      
+      if (error.message.includes('Backend not available')) {
+        setError('CMS后端服务不可用，请先启动Supabase Functions');
+        setActiveTab('backend');
+        return;
+      }
+      
+      // 处理用户已存在的情况
+      if (errorData?.user_exists || errorData?.code === 'email_exists' || 
+          error.message.includes('already registered') || 
+          error.message.includes('User already registered')) {
+        
+        // 自动切换到登录页面并填充邮箱
+        setSigninData({ email: signupData.email, password: '' });
+        setActiveTab('signin');
+        setSuccess('该邮箱已注册，已为您切换到登录页面，请输入密码登录。');
+        toast.info('该邮箱已注册，请直接登录');
+        return;
+      }
+      
+      // 处理其他错误
+      let errorMessage = '注册失败，请重试';
+      
+      if (error.message.includes('Invalid email')) {
+        errorMessage = '邮箱格式不正确，请检查后重试';
+      } else if (error.message.includes('Password should be')) {
+        errorMessage = '密码不符合要求，请使用至少6位字符';
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setSignInData({ email: '', password: '' });
-    setSignUpData({ name: '', email: '', password: '', confirmPassword: '' });
-    setError(null);
-    setSuccess(null);
-    setShowPassword(false);
-    setActiveTab('signin');
+  const handleTestUsers = async () => {
+    setLoading(true);
+    clearMessages();
+
+    const isBackendAvailable = await checkBackendStatus();
+    if (!isBackendAvailable) {
+      setError('CMS后端服务不可用，请检查Supabase Functions是否正在运行');
+      setActiveTab('backend');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-c529659a/auth/test`, {
+        headers: {
+          'Authorization': `Bearer ${publicAnonKey}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`无法获取用户列表: ${errorData}`);
+      }
+      
+      const data = await response.json();
+      setTestUsers(data.users || []);
+      setSuccess(`找到 ${data.userCount} 个用户`);
+      toast.success(`找到 ${data.userCount} 个用户`);
+    } catch (error: any) {
+      console.error('Test users error:', error);
+      if (error.message.includes('Failed to fetch')) {
+        setError('CMS后端服务不可用，请先启动Supabase Functions');
+        setActiveTab('backend');
+      } else {
+        setError('获取用户列表失败：' + error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTestUser = async () => {
+    setLoading(true);
+    clearMessages();
+
+    const isBackendAvailable = await checkBackendStatus();
+    if (!isBackendAvailable) {
+      setError('CMS后端服务不可用，请检查Supabase Functions是否正在运行');
+      setActiveTab('backend');
+      setLoading(false);
+      return;
+    }
+
+    const testEmail = 'admin@example.com';
+    const testPassword = 'admin123';
+    const testName = '测试管理员';
+
+    try {
+      await authAPI.signup(testEmail, testPassword, testName);
+      toast.success('测试用户创建成功！');
+      setSuccess(`测试用户创建成功！邮箱: ${testEmail}, 密码: ${testPassword}`);
+      
+      // 自动填充登录表单
+      setSigninData({ email: testEmail, password: testPassword });
+      setActiveTab('signin');
+    } catch (error: any) {
+      console.log('Create test user response:', error);
+      
+      if (error.message.includes('Backend not available')) {
+        setError('CMS后端服务不可用，请先启动Supabase Functions');
+        setActiveTab('backend');
+        return;
+      }
+      
+      // 尝试解析错误响应
+      let errorData = null;
+      try {
+        if (error.message.startsWith('API Error')) {
+          const errorText = error.message.split('): ')[1];
+          errorData = JSON.parse(errorText);
+        }
+      } catch (parseError) {
+        // 解析失败，使用原始错误消息
+      }
+      
+      // 处理用户已存在的情况
+      if (errorData?.user_exists || errorData?.code === 'email_exists' || 
+          error.message.includes('already registered') || 
+          error.message.includes('User already registered')) {
+        
+        toast.success('测试用户已存在，已为您填充登录信息');
+        setSuccess(`测试用户已存在。邮箱: ${testEmail}, 密码: ${testPassword}，已为您填充登录信息。`);
+        setSigninData({ email: testEmail, password: testPassword });
+        setActiveTab('signin');
+      } else {
+        console.error('Create test user error:', error);
+        setError(`创建测试用户失败：${errorData?.message || error.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickLogin = async () => {
+    if (signinData.email && signinData.password) {
+      const event = new Event('submit', { bubbles: true, cancelable: true });
+      await handleSignin(event as any);
+    }
   };
 
   const handleClose = () => {
-    resetForm();
+    clearMessages();
+    setSigninData({ email: '', password: '' });
+    setSignupData({ name: '', email: '', password: '', confirmPassword: '' });
+    setTestUsers([]);
+    setBackendStatus('checking');
     onClose();
-  };
-
-  const handleQuickLogin = (email: string, password: string) => {
-    setSignInData({ email, password });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Shield className="w-5 h-5 text-primary" />
-            <span>{t.title}</span>
+            <Settings className="w-5 h-5" />
+            <span>管理员认证</span>
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            {t.description}
+          <DialogDescription>
+            请登录或注册管理员账户以访问内容管理系统
           </DialogDescription>
         </DialogHeader>
 
-        {/* Demo Mode Indicator */}
-        {DEMO_MODE && (
-          <Alert className="border-accent/20 bg-accent/5">
-            <Key className="h-4 w-4 text-accent" />
-            <AlertDescription className="text-accent-foreground">
-              <strong>{t.demoMode}</strong> - {t.offlineMode}
-              <br />
-              <span className="text-xs mt-1 block">{t.demoCredentials}</span>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">{t.signIn}</TabsTrigger>
-            <TabsTrigger value="signup">{t.signUp}</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={(value: 'signin' | 'signup' | 'cms' | 'test' | 'backend') => {
+          setActiveTab(value);
+          clearMessages();
+        }}>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="signin" className="flex items-center space-x-1 text-xs">
+              <LogIn className="w-3 h-3" />
+              <span>登录</span>
+            </TabsTrigger>
+            <TabsTrigger value="signup" className="flex items-center space-x-1 text-xs">
+              <UserPlus className="w-3 h-3" />
+              <span>注册</span>
+            </TabsTrigger>
+            <TabsTrigger value="test" className="flex items-center space-x-1 text-xs">
+              <TestTube className="w-3 h-3" />
+              <span>测试</span>
+            </TabsTrigger>
+            <TabsTrigger value="backend" className="flex items-center space-x-1 text-xs">
+              <Server className="w-3 h-3" />
+              <span>后端</span>
+            </TabsTrigger>
+            <TabsTrigger value="cms" className="flex items-center space-x-1 text-xs">
+              <Settings className="w-3 h-3" />
+              <span>说明</span>
+            </TabsTrigger>
           </TabsList>
 
-          {/* Sign In Tab */}
+          {/* Backend Status Tab */}
+          <TabsContent value="backend">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <Server className="w-5 h-5" />
+                    <span>后端服务状态</span>
+                  </CardTitle>
+                  <CardDescription>
+                    CMS功能需要Supabase Edge Functions正在运行
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Server className="w-4 h-4" />
+                      <span>后端状态</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {backendStatus === 'checking' && (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                          <span className="text-blue-600">检查中...</span>
+                        </>
+                      )}
+                      {backendStatus === 'available' && (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-green-600">运行中</span>
+                        </>
+                      )}
+                      {backendStatus === 'unavailable' && (
+                        <>
+                          <AlertCircle className="w-4 h-4 text-red-500" />
+                          <span className="text-red-600">不可用</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={checkBackendStatus}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {backendStatus === 'checking' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        检查中...
+                      </>
+                    ) : (
+                      '重新检查'
+                    )}
+                  </Button>
+
+                  {backendStatus === 'unavailable' && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="space-y-2">
+                          <p>CMS后端服务不可用。要使用CMS功能，请：</p>
+                          <ol className="list-decimal list-inside text-sm space-y-1">
+                            <li>确保已安装Supabase CLI</li>
+                            <li>在项目根目录运行 <code className="bg-gray-100 px-1 rounded">supabase start</code></li>
+                            <li>运行 <code className="bg-gray-100 px-1 rounded">supabase functions serve</code></li>
+                            <li>等待Functions启动完成后重新检查</li>
+                          </ol>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {backendStatus === 'available' && (
+                    <Alert>
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        后端服务正常运行！您可以使用所有CMS功能了。
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-800 mb-2">快速启动指南</h4>
+                    <div className="text-sm text-blue-700 space-y-2">
+                      <p>如果这是您第一次运行，请按以下步骤操作：</p>
+                      <div className="bg-blue-100 p-2 rounded font-mono text-xs">
+                        # 安装Supabase CLI<br/>
+                        npm install -g supabase<br/><br/>
+                        # 启动本地Supabase<br/>
+                        supabase start<br/><br/>
+                        # 启动Edge Functions<br/>
+                        supabase functions serve
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <ExternalLink className="w-4 h-4" />
+                    <a 
+                      href="https://supabase.com/docs/guides/cli/getting-started" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      Supabase CLI 文档
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* 登录表单 */}
           <TabsContent value="signin">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <Mail className="w-5 h-5 mr-2 text-primary" />
-                  {t.secureLogin}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">{t.email}</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signin-email"
-                        type="email"
-                        value={signInData.email}
-                        onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder={t.emailPlaceholder}
-                        className="pl-10 bg-input-background border-border"
-                        disabled={loading}
-                      />
-                    </div>
+            <form onSubmit={handleSignin} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="signin-email">邮箱地址</Label>
+                <Input
+                  id="signin-email"
+                  type="email"
+                  placeholder="请输入邮箱地址"
+                  value={signinData.email}
+                  onChange={(e) => setSigninData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signin-password">密码</Label>
+                <Input
+                  id="signin-password"
+                  type="password"
+                  placeholder="请输入密码"
+                  value={signinData.password}
+                  onChange={(e) => setSigninData(prev => ({ ...prev, password: e.target.value }))}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {signinData.email === 'admin@example.com' && signinData.password === 'admin123' && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    检测到测试账户信息，点击登录按钮即可快速登录。
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex space-x-2">
+                <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
+                  取消
+                </Button>
+                <Button type="submit" disabled={loading} className="flex-1">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      登录中...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4 mr-2" />
+                      登录
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          {/* 注册表单 */}
+          <TabsContent value="signup">
+            <form onSubmit={handleSignup} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-name">姓名</Label>
+                <Input
+                  id="signup-name"
+                  type="text"
+                  placeholder="请输入姓名"
+                  value={signupData.name}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-email">邮箱地址</Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  placeholder="请输入邮箱地址"
+                  value={signupData.email}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">密码</Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  placeholder="请输入密码（至少6位）"
+                  value={signupData.password}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
+                  required
+                  minLength={6}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-confirm-password">确认密码</Label>
+                <Input
+                  id="signup-confirm-password"
+                  type="password"
+                  placeholder="请再次输入密码"
+                  value={signupData.confirmPassword}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="flex space-x-2">
+                <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
+                  取消
+                </Button>
+                <Button type="submit" disabled={loading} className="flex-1">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      注册中...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      注册
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          {/* 测试功能 */}
+          <TabsContent value="test">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">测试工具</CardTitle>
+                  <CardDescription>
+                    用于测试和调试的工具（需要后端服务运行）
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {success && (
+                    <Alert>
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertDescription>{success}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={createTestUser} 
+                      disabled={loading || backendStatus !== 'available'}
+                      className="flex-1"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <UserPlus className="w-4 h-4 mr-2" />
+                      )}
+                      创建测试用户
+                    </Button>
+                    <Button 
+                      onClick={handleTestUsers} 
+                      disabled={loading || backendStatus !== 'available'}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Users className="w-4 h-4 mr-2" />
+                      )}
+                      查看用户列表
+                    </Button>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">{t.password}</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signin-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={signInData.password}
-                        onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
-                        placeholder={t.passwordPlaceholder}
-                        className="pl-10 pr-10 bg-input-background border-border"
-                        disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        disabled={loading}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
+                  {backendStatus !== 'available' && (
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        测试功能需要后端服务运行，请先到"后端"标签页检查服务状态。
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                  {/* Demo Quick Login Buttons */}
-                  {DEMO_MODE && (
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">{t.demoHint}</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickLogin('admin@example.com', 'admin123')}
-                          className="text-xs flex-1 bg-accent/5 border-accent/20 text-accent-foreground hover:bg-accent/10"
-                          disabled={loading}
-                        >
-                          Admin
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickLogin('demo@example.com', 'demo123')}
-                          className="text-xs flex-1 bg-secondary/5 border-secondary/20 text-secondary hover:bg-secondary/10"
-                          disabled={loading}
-                        >
-                          Demo
-                        </Button>
+                  {testUsers.length > 0 && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="font-medium mb-2">系统用户 ({testUsers.length})</h4>
+                      <div className="space-y-2">
+                        {testUsers.map((user, index) => (
+                          <div key={index} className="text-sm bg-white p-2 rounded border">
+                            <div>邮箱: {user.email}</div>
+                            <div className="text-gray-500">创建时间: {new Date(user.created_at).toLocaleString()}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  {success && (
-                    <Alert className="border-green-200 bg-green-50">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-green-800">{success}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="flex space-x-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleClose} 
-                      className="flex-1"
-                      disabled={loading}
-                    >
-                      {t.cancel}
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={loading} 
-                      className="flex-1 bg-primary text-primary-foreground hover:bg-secondary"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {t.signInButton}
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="w-4 h-4 mr-2" />
-                          {t.signInButton}
-                        </>
-                      )}
-                    </Button>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-800 mb-2">测试说明</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• 点击"创建测试用户"将创建一个默认的管理员账户</li>
+                      <li>• 测试账户：admin@example.com / admin123</li>
+                      <li>• 创建后会自动填充到登录表单</li>
+                      <li>• 如果测试用户已存在，会直接填充登录信息</li>
+                    </ul>
                   </div>
 
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('signup')}
-                      className="text-sm text-primary hover:text-accent transition-colors hover:underline"
-                      disabled={loading}
-                    >
-                      {t.switchToSignUp}
-                    </button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+                  {signinData.email && signinData.password && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h4 className="font-medium text-green-800 mb-2">快速登录</h4>
+                      <p className="text-sm text-green-700 mb-3">
+                        测试账户信息已填充完成，点击下方按钮快速登录。
+                      </p>
+                      <Button 
+                        onClick={handleQuickLogin}
+                        disabled={loading}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            登录中...
+                          </>
+                        ) : (
+                          <>
+                            <LogIn className="w-4 h-4 mr-2" />
+                            使用 {signinData.email} 快速登录
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          {/* Sign Up Tab */}
-          <TabsContent value="signup">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <User className="w-5 h-5 mr-2 text-primary" />
-                  {t.adminAccess}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">{t.name}</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        value={signUpData.name}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder={t.namePlaceholder}
-                        className="pl-10 bg-input-background border-border"
-                        disabled={loading}
-                      />
+          {/* CMS说明 */}
+          <TabsContent value="cms">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">内容管理系统功能</CardTitle>
+                  <CardDescription>
+                    登录后可以访问完整的CMS管理功能
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">多语言内容管理</p>
+                      <p className="text-sm text-gray-600">分别管理中文和英文版本的所有内容</p>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">{t.email}</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        value={signUpData.email}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder={t.emailPlaceholder}
-                        className="pl-10 bg-input-background border-border"
-                        disabled={loading}
-                      />
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">个人信息编辑</p>
+                      <p className="text-sm text-gray-600">编辑个人简介、教育背景、工作经历等</p>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">{t.password}</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={signUpData.password}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
-                        placeholder={t.passwordPlaceholder}
-                        className="pl-10 pr-10 bg-input-background border-border"
-                        disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        disabled={loading}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">项目案例管理</p>
+                      <p className="text-sm text-gray-600">添加、编辑、删除项目案例，支持图片上传</p>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password">{t.confirmPassword}</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signup-confirm-password"
-                        type="password"
-                        value={signUpData.confirmPassword}
-                        onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        placeholder={t.confirmPasswordPlaceholder}
-                        className="pl-10 bg-input-background border-border"
-                        disabled={loading}
-                      />
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">兴趣爱好管理</p>
+                      <p className="text-sm text-gray-600">管理个人兴趣项目和相关文件</p>
                     </div>
                   </div>
-
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  {success && (
-                    <Alert className="border-green-200 bg-green-50">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-green-800">{success}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="flex space-x-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleClose} 
-                      className="flex-1"
-                      disabled={loading}
-                    >
-                      {t.cancel}
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={loading} 
-                      className="flex-1 bg-primary text-primary-foreground hover:bg-secondary"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {t.signUpButton}
-                        </>
-                      ) : (
-                        <>
-                          <User className="w-4 h-4 mr-2" />
-                          {t.signUpButton}
-                        </>
-                      )}
-                    </Button>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">文件上传管理</p>
+                      <p className="text-sm text-gray-600">上传和管理图片、视频、文档等文件</p>
+                    </div>
                   </div>
-
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('signin')}
-                      className="text-sm text-primary hover:text-accent transition-colors hover:underline"
-                      disabled={loading}
-                    >
-                      {t.switchToSignIn}
-                    </button>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">站点设置</p>
+                      <p className="text-sm text-gray-600">配置网站基本信息和主题颜色</p>
+                    </div>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-800 mb-2">快速开始</h4>
+                <ol className="text-sm text-blue-700 space-y-1">
+                  <li>1. 点击"后端"标签页确保服务正在运行</li>
+                  <li>2. 点击"测试"标签页创建测试用户</li>
+                  <li>3. 使用测试账户登录系统</li>
+                  <li>4. 开始管理您的作品集内容</li>
+                  <li>5. 在前端网站查看更新效果</li>
+                </ol>
+              </div>
+
+              <Button onClick={handleClose} className="w-full">
+                关闭
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

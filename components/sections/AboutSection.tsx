@@ -1,412 +1,283 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Skeleton } from '../ui/skeleton';
-import { Alert, AlertDescription } from '../ui/alert';
-import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { Separator } from '../ui/separator';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { 
-  User, Award, Heart, BookOpen, AlertCircle,
-  Palette, Camera, Lightbulb, Globe, Users
-} from 'lucide-react';
-import { fetchProfileData } from '../../utils/api';
+import { profileAPI } from '../../utils/api';
+import { Loader2, User, MapPin, Calendar, Mail, Phone, Globe, AlertCircle } from 'lucide-react';
 
-interface AboutData {
-  bio?: string;
-  curatorialPhilosophy?: string;
-  specialties?: string[];
-  achievements?: string[];
-  personalInfo?: {
-    age?: number;
-    location?: string;
-    languages?: string[];
-    experience?: string;
+interface ProfileData {
+  bio: string;
+  education: Array<{
+    institution: string;
+    degree: string;
+    period: string;
+    description: string;
+  }>;
+  experience: Array<{
+    company: string;
+    position: string;
+    period: string;
+    description: string;
+  }>;
+  contact: {
+    email: string;
+    phone: string;
+    location: string;
+    website: string;
   };
-  profileImage?: string;
 }
+
+const getDefaultProfileData = (language: 'zh' | 'en'): ProfileData => ({
+  bio: language === 'zh' 
+    ? '拥有7年国际经验的双语创意项目与展览经理，专注于跨文化艺术项目的策划与实施。具备丰富的项目管理经验，善于在多元文化环境中协调各方资源，推动创新项目的成功落地。' 
+    : 'Bilingual creative project and exhibition manager with 7+ years of international experience, specializing in cross-cultural art project planning and implementation. Extensive project management experience with expertise in coordinating resources across multicultural environments to drive innovative project success.',
+  education: [
+    {
+      institution: language === 'zh' ? '某知名大学' : 'Prestigious University',
+      degree: language === 'zh' ? '艺术管理硕士' : 'Master of Arts Management',
+      period: '2016-2018',
+      description: language === 'zh' ? '专注于当代艺术策展与文化项目管理' : 'Focused on contemporary art curation and cultural project management'
+    }
+  ],
+  experience: [
+    {
+      company: language === 'zh' ? '国际文化机构' : 'International Cultural Institution',
+      position: language === 'zh' ? '项目经理' : 'Project Manager',
+      period: '2018-2024',
+      description: language === 'zh' ? '负责大型国际艺术展览的策划与执行' : 'Responsible for planning and executing major international art exhibitions'
+    }
+  ],
+  contact: {
+    email: 'contact@example.com',
+    phone: '+86 138 0000 0000',
+    location: language === 'zh' ? '北京, 中国' : 'Beijing, China',
+    website: 'https://portfolio.example.com'
+  }
+});
 
 export function AboutSection() {
   const { language } = useLanguage();
-  const [aboutData, setAboutData] = useState<AboutData>({});
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const texts = {
-    zh: {
-      title: '策展人简介',
-      subtitle: '认识双语策展人及创意制作人 Noah Chen',
-      biography: '核心背景',
-      curatorialPhilosophy: '策展理念',
-      specialties: '专业领域',
-      achievements: '核心成就',
-      personalInfo: '个人信息',
-      experience: '从业经验',
-      location: '工作地点',
-      languages: '语言能力',
-      loading: '正在加载个人信息...',
-      error: '加载失败，请稍后重试',
-      noData: '暂无个人信息',
-      defaultBio: '双语策展人及创意制作人，拥有 7 年以上亚洲地区展览及公共艺术领域经验。',
-      defaultPhilosophy: '认为策展不仅是艺术品的选择，更是塑造连接人、场所与目的的共享体验。',
-      defaultSpecialties: [
-        '公共艺术策展',
-        '跨学科合作',
-        '空间设计',
-        '项目管理',
-        '国际艺术家联络',
-        '商业艺术空间运营'
-      ],
-      defaultAchievements: [
-        '策划超过20个大型展览项目',
-        '管理总预算超过千万人民币的国际展览',
-        '与Marina Abramović、Yoko Ono等世界级艺术家合作',
-        '成功打造多个沉浸式艺术体验空间'
-      ]
-    },
-    en: {
-      title: 'Curatorial Profile',
-      subtitle: 'Meet Noah Chen - Bilingual Curator & Creative Producer',
-      biography: 'Core Background',
-      curatorialPhilosophy: 'Curatorial Philosophy',
-      specialties: 'Professional Expertise',
-      achievements: 'Key Achievements',
-      personalInfo: 'Personal Information',
-      experience: 'Professional Experience',
-      location: 'Location',
-      languages: 'Languages',
-      loading: 'Loading personal information...',
-      error: 'Failed to load, please try again later',
-      noData: 'No personal information available',
-      defaultBio: 'Bilingual curator and creative producer with over 7 years of experience in exhibition and public art fields across Asia.',
-      defaultPhilosophy: 'Believes that curation is not merely the selection of artworks, but the creation of shared experiences that connect people, places, and purposes.',
-      defaultSpecialties: [
-        'Public Art Curation',
-        'Interdisciplinary Collaboration',
-        'Spatial Design',
-        'Project Management',
-        'International Artist Relations',
-        'Commercial Art Space Operations'
-      ],
-      defaultAchievements: [
-        'Curated over 20 major exhibition projects',
-        'Managed international exhibitions with budgets exceeding 10 million RMB',
-        'Collaborated with world-class artists including Marina Abramović and Yoko Ono',
-        'Successfully created multiple immersive art experience spaces'
-      ]
-    }
-  };
-
-  const t = texts[language];
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
-    loadAboutData();
+    loadProfileData();
   }, [language]);
 
-  const loadAboutData = async () => {
+  const loadProfileData = async () => {
+    setLoading(true);
+    setError(null);
+    setUsingFallback(false);
+
     try {
-      setLoading(true);
-      setError(null);
+      const data = await profileAPI.get(language, false);
       
-      const { data, error: fetchError } = await fetchProfileData(language);
-      
-      if (fetchError) {
-        console.error('Failed to load about data:', fetchError);
-        setAboutData({
-          bio: t.defaultBio,
-          curatorialPhilosophy: t.defaultPhilosophy,
-          specialties: t.defaultSpecialties,
-          achievements: t.defaultAchievements,
-          personalInfo: {
-            experience: language === 'zh' ? '7年以上' : '7+ years',
-            location: language === 'zh' ? '亚洲地区' : 'Asia Region',
-            languages: ['中文', 'English']
-          }
-        });
+      if (!data || !data.bio) {
+        console.log('No CMS profile data available, using default data');
+        setProfileData(getDefaultProfileData(language));
+        setUsingFallback(true);
       } else {
-        setAboutData(data || {
-          bio: t.defaultBio,
-          curatorialPhilosophy: t.defaultPhilosophy,
-          specialties: t.defaultSpecialties,
-          achievements: t.defaultAchievements,
-          personalInfo: {
-            experience: language === 'zh' ? '7年以上' : '7+ years',
-            location: language === 'zh' ? '亚洲地区' : 'Asia Region',
-            languages: ['中文', 'English']
-          }
-        });
+        setProfileData({ ...getDefaultProfileData(language), ...data });
       }
-    } catch (err) {
-      console.error('Failed to load about data:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+    } catch (error) {
+      console.log('CMS not available, using default profile data:', error);
+      setProfileData(getDefaultProfileData(language));
+      setUsingFallback(true);
+      setError(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const specialtyIcons = {
-    'Public Art Curation': Palette,
-    'Interdisciplinary Collaboration': Users,
-    'Spatial Design': Lightbulb,
-    'Project Management': BookOpen,
-    'International Artist Relations': Globe,
-    'Commercial Art Space Operations': Award,
-    '公共艺术策展': Palette,
-    '跨学科合作': Users,
-    '空间设计': Lightbulb,
-    '项目管理': BookOpen,
-    '国际艺术家联络': Globe,
-    '商业艺术空间运营': Award
+  const texts = {
+    zh: {
+      loading: '加载中...',
+      aboutTitle: '关于我',
+      personalInfo: '个人信息',
+      education: '教育背景',
+      experience: '工作经历',
+      contact: '联系方式',
+      demo: '演示模式'
+    },
+    en: {
+      loading: 'Loading...',
+      aboutTitle: 'About Me',
+      personalInfo: 'Personal Information',
+      education: 'Education',
+      experience: 'Experience',
+      contact: 'Contact Information',
+      demo: 'Demo Mode'
+    }
   };
+
+  const t = texts[language];
 
   if (loading) {
     return (
-      <section className="py-20 bg-gradient-to-br from-green-50 to-blue-100">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <Skeleton className="h-12 w-64 mx-auto mb-4" />
-            <Skeleton className="h-6 w-96 mx-auto" />
-          </div>
-          
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-32" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-24 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="space-y-8">
-              <Skeleton className="h-80 w-full" />
-              <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-6 w-24 mb-4" />
-                  <div className="space-y-2">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-4 w-full" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+      <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span className="text-lg">{t.loading}</span>
         </div>
       </section>
     );
   }
 
-  if (error) {
+  if (!profileData) {
     return (
-      <section className="py-20 bg-gradient-to-br from-green-50 to-blue-100">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 text-green-600 rounded-full mb-6">
-              <User className="w-8 h-8" />
-            </div>
-            <h2 className="mb-4">{t.title}</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t.subtitle}
-            </p>
-          </div>
-          
-          <div className="max-w-2xl mx-auto">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {t.error}
-              </AlertDescription>
-            </Alert>
-          </div>
+      <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600">加载个人信息时出现问题</p>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="py-20 bg-gradient-to-br from-green-50 to-blue-100">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 text-green-600 rounded-full mb-6">
-            <Palette className="w-8 h-8" />
+    <section className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-20">
+      <div className="max-w-4xl mx-auto px-6">
+        {/* Demo Mode Indicator */}
+        {usingFallback && (
+          <div className="mb-6 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-sm">{t.demo}</span>
           </div>
-          <h2 className="mb-4">{t.title}</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            {t.subtitle}
-          </p>
+        )}
+
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{t.aboutTitle}</h1>
+          <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
         </div>
 
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Biography */}
-            <Card className="border-l-4 border-l-green-500">
+            {/* Personal Information */}
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-primary">
-                  <BookOpen className="w-5 h-5 mr-2" />
-                  {t.biography}
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="w-5 h-5" />
+                  <span>{t.personalInfo}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  {aboutData.bio || t.defaultBio}
-                </p>
+                <p className="text-gray-700 leading-relaxed">{profileData.bio}</p>
               </CardContent>
             </Card>
 
-            {/* Curatorial Philosophy */}
-            <Card className="border-l-4 border-l-purple-500">
+            {/* Education */}
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-primary">
-                  <Lightbulb className="w-5 h-5 mr-2" />
-                  {t.curatorialPhilosophy}
+                <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>{t.education}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {(profileData.education || []).map((edu, index) => (
+                    <div key={index} className="border-l-4 border-blue-600 pl-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-lg text-gray-900">{edu.institution}</h3>
+                        <Badge variant="secondary">{edu.period}</Badge>
+                      </div>
+                      <p className="text-blue-600 font-medium mb-2">{edu.degree}</p>
+                      <p className="text-gray-600">{edu.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Experience */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>{t.experience}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {(profileData.experience || []).map((exp, index) => (
+                    <div key={index} className="border-l-4 border-green-600 pl-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-lg text-gray-900">{exp.company}</h3>
+                        <Badge variant="secondary">{exp.period}</Badge>
+                      </div>
+                      <p className="text-green-600 font-medium mb-2">{exp.position}</p>
+                      <p className="text-gray-600">{exp.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Contact Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Mail className="w-5 h-5" />
+                  <span>{t.contact}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <p className="text-muted-foreground leading-relaxed italic">
-                    "{aboutData.curatorialPhilosophy || t.defaultPhilosophy}"
-                  </p>
-                  {language === 'zh' && (
-                    <div className="space-y-3 text-muted-foreground text-sm">
-                      <p>• 实践植根于公共艺术，主张艺术超越画廊边界，融入日常生活对话</p>
-                      <p>• 关注当代艺术与社会环境、公共空间、集体记忆的交集</p>
-                      <p>• 通过特定场地装置、跨学科合作及易懂叙事，打造开放、参与性强且具有情境意义的展览</p>
-                      <p>• 将每个项目视为"活的有机体"，通过创作者、社区与空间的互动不断演化</p>
+                  {profileData.contact.email && (
+                    <div className="flex items-center space-x-3">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <a 
+                        href={`mailto:${profileData.contact.email}`}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        {profileData.contact.email}
+                      </a>
                     </div>
                   )}
-                  {language === 'en' && (
-                    <div className="space-y-3 text-muted-foreground text-sm">
-                      <p>• Practice rooted in public art, advocating for art beyond gallery boundaries, integrating into daily life conversations</p>
-                      <p>• Focus on the intersection of contemporary art with social environment, public space, and collective memory</p>
-                      <p>• Create open, participatory, and contextually meaningful exhibitions through site-specific installations, interdisciplinary collaboration, and accessible narratives</p>
-                      <p>• View each project as a "living organism" that continuously evolves through interactions between creators, communities, and spaces</p>
+
+                  {profileData.contact.phone && (
+                    <div className="flex items-center space-x-3">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <a 
+                        href={`tel:${profileData.contact.phone}`}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        {profileData.contact.phone}
+                      </a>
+                    </div>
+                  )}
+
+                  {profileData.contact.location && (
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-700 text-sm">{profileData.contact.location}</span>
+                    </div>
+                  )}
+
+                  {profileData.contact.website && (
+                    <div className="flex items-center space-x-3">
+                      <Globe className="w-4 h-4 text-gray-500" />
+                      <a 
+                        href={profileData.contact.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        {profileData.contact.website}
+                      </a>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-
-            {/* Professional Specialties */}
-            {aboutData.specialties && aboutData.specialties.length > 0 && (
-              <Card className="border-l-4 border-l-blue-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary">
-                    <Palette className="w-5 h-5 mr-2" />
-                    {t.specialties}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {aboutData.specialties.map((specialty, index) => {
-                      const IconComponent = specialtyIcons[specialty as keyof typeof specialtyIcons] || Lightbulb;
-                      return (
-                        <div key={index} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <IconComponent className="w-4 h-4 text-white" />
-                          </div>
-                          <span className="font-medium text-blue-900">{specialty}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Achievements */}
-            {aboutData.achievements && aboutData.achievements.length > 0 && (
-              <Card className="border-l-4 border-l-yellow-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary">
-                    <Award className="w-5 h-5 mr-2" />
-                    {t.achievements}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {aboutData.achievements.map((achievement, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-muted-foreground">{achievement}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-8">
-            {/* Profile Image */}
-            <Card className="overflow-hidden">
-              <CardContent className="p-0">
-                {aboutData.profileImage ? (
-                  <ImageWithFallback
-                    src={aboutData.profileImage}
-                    alt="Noah Chen Profile"
-                    className="w-full h-80 object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-80 bg-gradient-to-br from-green-100 to-blue-200 flex items-center justify-center">
-                    <div className="text-center space-y-4">
-                      <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto">
-                        <Palette className="w-12 h-12 text-white" />
-                      </div>
-                      <p className="text-muted-foreground">Noah Chen</p>
-                      <p className="text-sm text-muted-foreground">
-                        {language === 'zh' ? '策展人 & 创意制作人' : 'Curator & Creative Producer'}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Personal Information */}
-            {aboutData.personalInfo && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary">
-                    <Heart className="w-5 h-5 mr-2" />
-                    {t.personalInfo}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {aboutData.personalInfo.experience && (
-                    <div>
-                      <h4 className="font-medium mb-2">{t.experience}</h4>
-                      <p className="text-muted-foreground">{aboutData.personalInfo.experience}</p>
-                    </div>
-                  )}
-                  
-                  {aboutData.personalInfo.location && (
-                    <div>
-                      <h4 className="font-medium mb-2">{t.location}</h4>
-                      <p className="text-muted-foreground">{aboutData.personalInfo.location}</p>
-                    </div>
-                  )}
-
-                  {aboutData.personalInfo.languages && aboutData.personalInfo.languages.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">{t.languages}</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {aboutData.personalInfo.languages.map((lang, index) => (
-                          <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
-                            {lang}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>
