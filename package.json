@@ -16,11 +16,5 @@
   "devDependencies": {
     "@types/react": "19.1.9",
     "typescript": "latest"
-  },
-  "type": "module",
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
   }
-}
 }
