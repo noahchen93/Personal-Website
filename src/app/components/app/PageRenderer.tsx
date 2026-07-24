@@ -1,11 +1,12 @@
-import React from 'react';
-import HomePage from '../pages/HomePage';
-import ProjectsPage from '../pages/ProjectsPage';
-import AIExplorePage from '../pages/AIExplorePage';
-import BlogPage from '../pages/BlogPage';
-import InterestsPage from '../pages/InterestsPage';
-import ContactPage from '../pages/ContactPage';
+import React, { lazy, Suspense } from 'react';
 import { Section } from './constants';
+
+const HomePage = lazy(() => import('../pages/HomePage'));
+const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
+const AIExplorePage = lazy(() => import('../pages/AIExplorePage'));
+const BlogPage = lazy(() => import('../pages/BlogPage'));
+const InterestsPage = lazy(() => import('../pages/InterestsPage'));
+const ContactPage = lazy(() => import('../pages/ContactPage'));
 
 interface PageRendererProps {
   currentSection: Section;
@@ -32,12 +33,20 @@ export default function PageRenderer({ currentSection }: PageRendererProps) {
   };
 
   return (
-    <main className="flex-1 overflow-auto bg-black px-8 py-6 lg:px-12 xl:px-16 custom-scrollbar">
+    <div className="h-full overflow-auto bg-black px-4 py-6 md:px-8 lg:px-12 xl:px-16 custom-scrollbar">
       <div className="terminal-content w-full">
         <div className="prose prose-invert prose-lg max-w-none">
-          {renderSection()}
+          <Suspense
+            fallback={(
+              <div className="min-h-48 flex items-center justify-center text-green-300 font-terminal">
+                Loading…
+              </div>
+            )}
+          >
+            {renderSection()}
+          </Suspense>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, Calendar, Tag as TagIcon } from 'lucide-react';
 import { ContentItem, useContent } from '../../content/ContentContext';
 import { useLanguage } from '../../language/LanguageContext';
-import MediaRenderer from '../../admin/MediaRenderer';
+import MediaRenderer from '../../shared/MediaRenderer';
 import UnifiedImage from '../../shared/UnifiedImage';
 import { getInterestImageUrlHelper } from './helpers';
 import { imageService, URLValidator } from '../../../utils/ImageService';

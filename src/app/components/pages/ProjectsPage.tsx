@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Code, Monitor, Github, ExternalLink, Calendar, MapPin, Users, Zap, ChevronDown, ChevronUp, Tag, Star } from 'lucide-react';
 import { useContent } from '../content/ContentContext';
 import { useLanguage, useTexts } from '../language/LanguageContext';
-import { usePageSEO } from '../shared/SEOContext';
-import MediaRenderer from '../admin/MediaRenderer';
+import MediaRenderer from '../shared/MediaRenderer';
 import UnifiedImage from '../shared/UnifiedImage';
 import { imageService, URLValidator } from '../../utils/ImageService';
 import { usePageLanguageSync } from '../shared/useLanguageSync';
@@ -135,20 +134,6 @@ export default function ProjectsPage() {
     }
   );
 
-  // Memoize SEO data
-  const seoConfig = useMemo(() => ({
-    title: isZh ? '项目展示 | Noah Chen - 创意项目与展览作品集' : 'Projects | Noah Chen - Creative Projects & Exhibitions',
-    description: isZh
-      ? '浏览 Noah Chen 的展览策划、文化活动、公共艺术与跨学科项目经验。'
-      : 'Explore Noah Chen\'s work across exhibitions, cultural events, public art and interdisciplinary projects.',
-    keywords: isZh
-      ? ['项目展示', '展览策划', '文化活动', '公共艺术', '项目管理', '跨学科合作']
-      : ['Projects', 'Exhibitions', 'Cultural Events', 'Public Art', 'Project Management', 'Interdisciplinary Collaboration'],
-    type: 'website' as const
-  }), [isZh]);
-
-  usePageSEO('projects', seoConfig);
-
   // 初始加载
   useEffect(() => {
     if (!isLoadingRef.current) {
@@ -240,7 +225,7 @@ export default function ProjectsPage() {
                     maxWidth: '100%',
                     maxHeight: '100%'
                   }}
-                  lazy={false}
+                  lazy={true}
                   showLoadingSpinner={true}
                   allImages={allImages}
                   getImageUrl={getImageUrl}
@@ -516,8 +501,8 @@ export default function ProjectsPage() {
             </h2>
             <p className="text-red-200 text-small">
               {isZh 
-                ? '> 还没有添加任何项目内容\n> 请使用管理面板添加项目' 
-                : '> No projects have been added yet\n> Please use the admin panel to add projects'
+                ? '> 还没有添加任何项目内容\n> 请在本地内容数据文件中添加项目'
+                : '> No projects have been added yet\n> Add projects in the local content data file'
               }
             </p>
           </div>

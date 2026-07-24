@@ -3,10 +3,24 @@ import { Tag, Eye, ExternalLink, Globe, Headphones, Play, Music, Radio, Clock } 
 import { ContentItem, useContent } from '../../content/ContentContext';
 import { useLanguage } from '../../language/LanguageContext';
 import UnifiedImage from '../../shared/UnifiedImage';
-import MediaRenderer from '../../admin/MediaRenderer';
+import MediaRenderer from '../../shared/MediaRenderer';
 // 移除分类相关导入
 import { imageService, URLValidator } from '../../../utils/ImageService';
 import { toast } from 'sonner';
+
+const createPlainTextPreview = (content: string, maxLength = 260) => {
+  const plainText = content
+    .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
+    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[#>*_`~|-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return plainText.length > maxLength
+    ? `${plainText.slice(0, maxLength).trimEnd()}…`
+    : plainText;
+};
 
 interface InterestData {
   title: string;
@@ -114,6 +128,7 @@ export default function InterestCard({
     isPodcast: interest.data?.isPodcast || false,
     podcastData: interest.data?.podcastData || undefined
   };
+  const contentPreview = createPlainTextPreview(data.content);
 
   // 获取兴趣封面图片 - 使用统一的图片服务
   const getCoverImageUrl = () => {
@@ -231,7 +246,7 @@ export default function InterestCard({
                   objectFit: 'contain',
                   objectPosition: 'center'
                 }}
-                lazy={false}
+                lazy={true}
                 showLoadingSpinner={true}
                 allImages={allImages}
                 getImageUrl={getImageUrl}
@@ -422,7 +437,7 @@ export default function InterestCard({
                 objectFit: 'contain',
                 objectPosition: 'center'
               }}
-              lazy={false}
+              lazy={true}
               showLoadingSpinner={true}
               allImages={allImages}
               getImageUrl={getImageUrl}
@@ -530,9 +545,9 @@ export default function InterestCard({
         </header>
 
         {/* 内容预览 - 固定显示3行 */}
-        {data.content && (
+        {contentPreview && (
           <div className={`${isContentPodcast ? 'text-purple-100' : 'text-pink-100'} leading-relaxed text-sm terminal-preview-content line-clamp-3`}>
-            <MediaRenderer content={data.content} className="prose prose-sm terminal-content" />
+            {contentPreview}
           </div>
         )}
 

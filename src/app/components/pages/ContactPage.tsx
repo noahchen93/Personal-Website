@@ -1,24 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Mail, MessageSquare, Send, User, Phone, MapPin, Github, Linkedin, Twitter, ExternalLink, Terminal, ChevronRight, Monitor, Wifi, Zap, MessageCircle, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, MessageSquare, Phone, MapPin, Github, Linkedin, Twitter, ExternalLink, Terminal, ChevronRight, Monitor, Wifi, Zap, MessageCircle, Globe } from 'lucide-react';
 import { useContent } from '../content/ContentContext';
-import { useLanguage, useTexts } from '../language/LanguageContext';
-import { usePageSEO } from '../shared/SEOContext';
-import MediaRenderer from '../admin/MediaRenderer';
+import { useLanguage } from '../language/LanguageContext';
+import MediaRenderer from '../shared/MediaRenderer';
 import AIChatBox from '../chat/AIChatBox';
 import { usePageLanguageSync } from '../shared/useLanguageSync';
 
 export default function ContactPage() {
-  const { getContentByLanguage, lastUpdateTimestamp, isOnline } = useContent();
+  const { getContentByLanguage, lastUpdateTimestamp } = useContent();
   const { currentLanguage, isZh } = useLanguage();
-  const texts = useTexts();
   const [contactContent, setContactContent] = useState<any>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: ''
-  });
 
 
   const loadContactContent = async () => {
@@ -45,27 +36,10 @@ export default function ContactPage() {
     }
   );
 
-
-  const seoConfig = useMemo(() => ({
-    title: isZh 
-      ? '联系我 | Noah Chen - 建立连接，开启对话' 
-      : 'Contact Me | Noah Chen - Get in Touch',
-    description: isZh
-      ? '想要与Noah Chen取得联系？通过邮箱、社交媒体或联系表单与我沟通。我乐意讨论项目合作、技术交流或任何有趣的想法。'
-      : 'Want to get in touch with Noah Chen? Contact me via email, social media, or the contact form. I\'m happy to discuss project collaborations, technical exchanges, or any interesting ideas.',
-    keywords: isZh
-      ? ['Noah Chen', '联系方式', '邮箱联系', '项目合作', '技术交流', 'LinkedIn', 'GitHub', '社交媒体', '联系表单']
-      : ['Noah Chen', 'Contact', 'Email Contact', 'Project Collaboration', 'Technical Exchange', 'LinkedIn', 'GitHub', 'Social Media', 'Contact Form'],
-    type: 'profile' as const
-  }), [isZh]);
-
-
-  usePageSEO('contact', seoConfig);
-
   useEffect(() => {
     console.log(`[ContactPage] Initial load for language: ${currentLanguage}`);
     loadContactContent();
-  }, [lastUpdateTimestamp]);
+  }, [lastUpdateTimestamp, currentLanguage]);
 
   const handleNavigation = (target: string, external?: boolean) => {
     if (external) {
@@ -94,24 +68,8 @@ export default function ContactPage() {
     return `https://${url}`;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setShowSuccess(true);
-    setMessage('');
-    setFormData({ name: '', email: '' });
-    
-
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-
   const personalInfo = contactContent?.personalInfo || {};
+  const directEmail = personalInfo.email || 'chenyujian93@gmail.com';
   const contactMethods = [];
   
   if (personalInfo.email) {
@@ -273,7 +231,7 @@ export default function ContactPage() {
                       {isZh ? '暂无联系方式信息' : 'No contact information available'}
                     </div>
                     <div className="text-cyan-200/60 text-small mt-1">
-                      {isZh ? '请通过管理面板添加联系信息' : 'Please add contact information through the admin panel'}
+                      {isZh ? '请在内容数据文件中添加联系信息' : 'Add contact details in the content data file'}
                     </div>
                   </div>
                 )}
@@ -305,7 +263,7 @@ export default function ContactPage() {
                       {isZh ? '暂无社交链接' : 'No social links available'}
                     </div>
                     <div className="text-cyan-200/60 text-small mt-1">
-                      {isZh ? '请通过管理面板添加社交媒体链接' : 'Please add social media links through the admin panel'}
+                      {isZh ? '请在内容数据文件中添加社交媒体链接' : 'Add social links in the content data file'}
                     </div>
                   </div>
                 )}
@@ -322,95 +280,37 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Contact Form - Cyan Glass */}
-          <div className="glass-cyan rounded-lg p-6 transition-all duration-300">
+          {/* Direct contact — the site has no form backend. */}
+          <div className="glass-cyan rounded-lg p-6 transition-all duration-300 flex flex-col">
             <div className="flex items-center space-x-2 text-cyan-200 mb-6">
-              <Send className="w-5 h-5" />
-              <span className="text-medium">[TRANSMISSION] {isZh ? '消息传输' : 'Message Transmission'}</span>
+              <Mail className="w-5 h-5" />
+              <span className="text-medium">[DIRECT] {isZh ? '直接联系' : 'Direct Contact'}</span>
             </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-white text-small mb-2 font-terminal">
-                  {isZh ? '用户标识' : 'User Identity'}
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-4 w-4 text-cyan-400" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full pl-10 pr-3 py-3 bg-black/30 border border-cyan-300/30 rounded-lg text-cyan-100 placeholder-cyan-400/60 focus:border-cyan-300 focus:bg-black/50 focus:outline-none transition-all font-terminal text-medium"
-                    placeholder={isZh ? '输入用户名...' : 'Enter username...'}
-                  />
+
+            <div className="flex-1 flex flex-col justify-center space-y-6">
+              <div className="p-5 bg-black/20 border border-cyan-300/20 rounded-lg">
+                <div className="text-white text-medium mb-3">
+                  {isZh ? '有合作想法或想聊聊？' : 'Have an idea or want to talk?'}
                 </div>
+                <p className="text-cyan-100 text-small leading-relaxed">
+                  {isZh
+                    ? '这个网站采用纯静态展示，不会收集或提交访客填写的数据。请直接通过邮件与我联系。'
+                    : 'This is a static portfolio and does not collect or submit visitor data. Please contact me directly by email.'}
+                </p>
               </div>
 
-              <div>
-                <label className="block text-white text-small mb-2 font-terminal">
-                  {isZh ? '通信地址' : 'Communication Address'}
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-4 w-4 text-cyan-400" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full pl-10 pr-3 py-3 bg-black/30 border border-cyan-300/30 rounded-lg text-cyan-100 placeholder-cyan-400/60 focus:border-cyan-300 focus:bg-black/50 focus:outline-none transition-all font-terminal text-medium"
-                    placeholder={isZh ? '输入邮箱地址...' : 'Enter email address...'}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white text-small mb-2 font-terminal">
-                  {isZh ? '数据包内容' : 'Data Package Content'}
-                </label>
-                <textarea
-                  required
-                  rows={6}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full px-3 py-3 bg-black/30 border border-cyan-300/30 rounded-lg text-cyan-100 placeholder-cyan-400/60 focus:border-cyan-300 focus:bg-black/50 focus:outline-none transition-all resize-none font-terminal text-medium"
-                  placeholder={isZh ? '输入消息内容...' : 'Enter message content...'}
-                />
-              </div>
-
-              {showSuccess && (
-                <div className="bg-green-500/20 border border-green-400/40 rounded-lg p-3">
-                  <div className="flex items-center space-x-2 text-green-300">
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-small font-terminal">
-                      {isZh ? '> 消息传输成功！等待响应...' : '> Message transmitted successfully! Awaiting response...'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full btn-glass-cyan flex items-center justify-center space-x-2 py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              <a
+                href={`mailto:${directEmail}`}
+                className="btn-glass-cyan flex items-center justify-center space-x-3 py-4 px-6 rounded-lg transition-all duration-200"
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-cyan-300 border-t-transparent rounded-full" />
-                    <span className="text-medium font-terminal">{isZh ? '传输中...' : 'Transmitting...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    <span className="text-medium font-terminal">{isZh ? '发送数据包' : 'Send Data Package'}</span>
-                  </>
-                )}
-              </button>
-            </form>
+                <Mail className="w-5 h-5" />
+                <span className="text-medium font-terminal">{directEmail}</span>
+              </a>
+
+              <div className="text-cyan-200/70 text-small text-center">
+                {isZh ? '点击后将打开你的默认邮件应用' : 'Opens your default email application'}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -419,14 +319,12 @@ export default function ContactPage() {
           <div className="flex items-center space-x-2">
             <MessageCircle className="w-4 h-4" />
             <span>
-              {isZh ? '24/7 在线联系' : '24/7 Online Contact'}
+              {isZh ? '纯静态作品集' : 'Static Portfolio'}
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <Globe className="w-4 h-4" />
-            <span className={isOnline ? 'text-green-400' : 'text-yellow-400'}>
-              {isOnline ? (isZh ? '在线模式' : 'Online') : (isZh ? '离线模式' : 'Offline')}
-            </span>
+            <Mail className="w-4 h-4" />
+            <span>{isZh ? '通过邮件联系' : 'Contact by email'}</span>
           </div>
         </div>
       </div>

@@ -1698,14 +1698,10 @@ textarea::placeholder {
   opacity: 0.6 !important;
 }
 
-/* CMS后台专用样式增强 */
+/* Dialog form controls */
 [data-radix-dialog-content] input,
 [data-radix-dialog-content] textarea,
-[data-radix-dialog-content] select,
-.cms-input,
-.admin-panel input,
-.admin-panel textarea,
-.admin-panel select {
+[data-radix-dialog-content] select {
   color: white !important;
   background: linear-gradient(135deg, 
     rgba(30, 41, 59, 0.4) 0%, 
@@ -1721,11 +1717,7 @@ textarea::placeholder {
 
 [data-radix-dialog-content] input:focus,
 [data-radix-dialog-content] textarea:focus,
-[data-radix-dialog-content] select:focus,
-.cms-input:focus,
-.admin-panel input:focus,
-.admin-panel textarea:focus,
-.admin-panel select:focus {
+[data-radix-dialog-content] select:focus {
   color: white !important;
   background: linear-gradient(135deg, 
     rgba(30, 41, 59, 0.6) 0%, 
@@ -1736,36 +1728,9 @@ textarea::placeholder {
 }
 
 [data-radix-dialog-content] input::placeholder,
-[data-radix-dialog-content] textarea::placeholder,
-.cms-input::placeholder,
-.admin-panel input::placeholder,
-.admin-panel textarea::placeholder {
+[data-radix-dialog-content] textarea::placeholder {
   color: rgba(255, 255, 255, 0.5) !important;
   opacity: 0.5 !important;
-}
-
-/* Enhanced CMS按钮样式 */
-.cms-primary-button {
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 0.3) 0%, 
-    rgba(99, 102, 241, 0.25) 100%) !important;
-  color: white !important;
-  border: 1px solid rgba(59, 130, 246, 0.6) !important;
-  padding: 0.75rem 1.5rem !important;
-  border-radius: 0.75rem !important;
-  font-weight: 500 !important;
-  transition: all 0.3s ease-in-out !important;
-  backdrop-filter: blur(15px) saturate(180%) !important;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3) !important;
-}
-
-.cms-primary-button:hover {
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 0.5) 0%, 
-    rgba(99, 102, 241, 0.45) 100%) !important;
-  border-color: rgba(59, 130, 246, 0.8) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4) !important;
 }
 
 /* HomePage subtitle强制白色保持 */
@@ -1799,30 +1764,6 @@ div[data-homepage-subtitle="true"] * {
   color: #ffffff !important;
   text-shadow: none !important;
   opacity: 1 !important;
-}
-
-/* CMS Layout增强样式 */
-.cms-container {
-  background: rgba(10, 14, 26, 0.95) !important;
-  color: white !important;
-  font-family: var(--font-terminal) !important;
-  min-height: 100vh !important;
-  padding: 1rem !important;
-}
-
-.cms-bg-card {
-  background: linear-gradient(135deg, 
-    rgba(30, 41, 59, 0.4) 0%, 
-    rgba(51, 65, 85, 0.35) 100%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.4) !important;
-  backdrop-filter: blur(15px) saturate(180%) !important;
-  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3) !important;
-}
-
-.cms-bg-secondary {
-  background: rgba(30, 41, 59, 0.3) !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
-  backdrop-filter: blur(12px) !important;
 }
 
 /* ===== 动态图片布局系统 ===== */

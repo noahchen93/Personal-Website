@@ -317,12 +317,13 @@ const STATIC_CONTENT: ContentItem[] = [
     pageSettings: {
       title: '联系终端',
       subtitle: '> 建立连接，开启对话',
-      description: '如果你有文化项目、展览开发、数字内容或跨学科合作的想法，欢迎通过 GitHub 与我联系。',
+      description: '如果你有文化项目、展览开发、数字内容或跨学科合作的想法，欢迎通过邮件或 LinkedIn 与我联系。',
     },
     personalInfo: {
-      location: '中国',
+      email: 'chenyujian93@gmail.com',
+      location: '新加坡',
       socialLinks: [
-        { platform: 'GitHub', url: 'https://github.com/noahchen93' },
+        { platform: 'LinkedIn', url: 'https://www.linkedin.com/in/noahchen123' },
       ],
     },
   }),
@@ -330,12 +331,13 @@ const STATIC_CONTENT: ContentItem[] = [
     pageSettings: {
       title: 'Contact Terminal',
       subtitle: '> Initialize connection, start a conversation',
-      description: 'For cultural projects, exhibition development, digital content or interdisciplinary collaborations, you can currently reach me through GitHub.',
+      description: 'For cultural projects, exhibition development, digital content or interdisciplinary collaborations, reach me by email or LinkedIn.',
     },
     personalInfo: {
-      location: 'China',
+      email: 'chenyujian93@gmail.com',
+      location: 'Singapore',
       socialLinks: [
-        { platform: 'GitHub', url: 'https://github.com/noahchen93' },
+        { platform: 'LinkedIn', url: 'https://www.linkedin.com/in/noahchen123' },
       ],
     },
   }),

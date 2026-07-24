@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Calendar, Tag, FileText, BookOpen, Clock, User, ArrowLeft, Eye } from 'lucide-react';
 import { useContent, ContentItem } from '../content/ContentContext';
-import MediaRenderer from '../admin/MediaRenderer';
+import MediaRenderer from '../shared/MediaRenderer';
 import { useLanguage, useTexts } from '../language/LanguageContext';
-import { usePageSEO } from '../shared/SEOContext';
 import UnifiedImage from '../shared/UnifiedImage';
 import { imageService, URLValidator } from '../../utils/ImageService';
 import { usePageLanguageSync } from '../shared/useLanguageSync';
@@ -142,20 +141,6 @@ export default function BlogPage() {
       setReadingMode(null);
     }
   );
-
-
-  const seoConfig = useMemo(() => ({
-    title: isZh ? '博客 | Noah Chen - 技术分享与思考记录' : 'Blog | Noah Chen - Technical Insights & Reflections',
-    description: isZh
-      ? '分享我的技术见解、学习心得和生活感悟。探索编程世界的点点滴滴，记录成长路上的思考与发现。'
-      : 'Sharing my technical insights, learning experiences, and life reflections. Exploring the world of programming, documenting thoughts and discoveries on the journey of growth.',
-    keywords: isZh
-      ? ['技术博客', '编程心得', '开发经验', '学习笔记', '技术分享', '软件开发', '前端开发', '全栈开发']
-      : ['Tech Blog', 'Programming Insights', 'Development Experience', 'Learning Notes', 'Technical Sharing', 'Software Development', 'Frontend Development', 'Full Stack Development'],
-    type: 'website' as const
-  }), [isZh]);
-
-  usePageSEO('blog', seoConfig);
 
 
   useEffect(() => {
@@ -481,7 +466,7 @@ export default function BlogPage() {
                           alt={data.cover_caption || data.title || 'Blog cover'}
                           className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500"
                           style={{ maxHeight: '300px', minHeight: '150px' }}
-                          lazy={false}
+                          lazy={true}
                           showLoadingSpinner={true}
                           allImages={allImages}
                           getImageUrl={getImageUrl}

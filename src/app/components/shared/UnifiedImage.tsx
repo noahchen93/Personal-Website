@@ -253,7 +253,7 @@ const UnifiedImage: React.FC<UnifiedImageProps> = ({
     <div className="unified-image-container" style={containerStyle}>
       <img
         ref={imgRef}
-        src={currentSrc}
+        src={currentSrc || undefined}
         alt={alt}
         className={imageClassName}
         style={{

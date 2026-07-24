@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
-import UnifiedImage from '../shared/UnifiedImage';
+import UnifiedImage from './UnifiedImage';
 import { useContent } from '../content/ContentContext';
 import { imageService } from '../../utils/ImageService';
 
@@ -69,11 +69,20 @@ const MediaRenderer: React.FC<MediaRendererProps> = ({
     // 1. 首先在allImages中查找
     const imageData = allImages.find(img => img.id === imageId);
     if (imageData && imageData.file_url) {
-      if (imageData.file_url.startsWith('http')) {
+      if (
+        imageData.file_url.startsWith('http://') ||
+        imageData.file_url.startsWith('https://') ||
+        imageData.file_url.startsWith('data:') ||
+        imageData.file_url.startsWith('blob:')
+      ) {
         return imageData.file_url;
-      } else {
-        return `https://${imageData.file_url.replace(/^\/+/, '')}`;
       }
+
+      // 本地静态资源必须保留相对路径。旧逻辑会把
+      // /assets/... 错误地转换成 https://assets/...。
+      return imageData.file_url.startsWith('/')
+        ? imageData.file_url
+        : `/${imageData.file_url}`;
     }
     
     // 2. 使用getImageUrl作为备选

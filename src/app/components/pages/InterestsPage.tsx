@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { Heart, Star, User, Clock, ExternalLink } from 'lucide-react';
 import { useContent, ContentItem } from '../content/ContentContext';
 import { useLanguage, useTexts } from '../language/LanguageContext';
-import { usePageSEO } from '../shared/SEOContext';
 import InterestCard from './interests/InterestCard';
 import ReadingMode from './interests/ReadingMode';
 
@@ -25,20 +24,6 @@ export default function InterestsPage() {
   // 使用ref来避免重复加载
   const isLoadingRef = useRef(false);
   const loadedLanguageRef = useRef<string | null>(null);
-
-  // SEO配置 - 使用useMemo稳定对象引用
-  const seoConfig = useMemo(() => ({
-    title: isZh ? '兴趣爱好 | Noah Chen - 技术之外的生活分享' : 'Interests | Noah Chen - Life Beyond Technology',
-    description: isZh
-      ? '分享我在技术之外的兴趣爱好和思考，记录生活中的点点滴滴，探索多彩的世界。'
-      : 'Sharing my hobbies and thoughts beyond technology, recording life\'s moments, exploring the colorful world.',
-    keywords: isZh
-      ? ['个人兴趣', '兴趣爱好', '生活分享', '多元发展', '生活记录', '个人成长', '兴趣探索']
-      : ['Personal Interests', 'Hobbies', 'Life Sharing', 'Diverse Development', 'Life Records', 'Personal Growth', 'Interest Exploration'],
-    type: 'website' as const
-  }), [isZh]);
-
-  usePageSEO('interests', seoConfig);
 
   // 稳定的数据加载函数
   const loadData = useCallback(async (language: string) => {
@@ -126,8 +111,8 @@ export default function InterestsPage() {
   , [isZh]);
 
   const emptyStateText = useMemo(() => isZh 
-    ? `${TERMINAL_PROMPT}还没有添加任何兴趣内容\n${TERMINAL_PROMPT}请使用管理面板添加内容`
-    : `${TERMINAL_PROMPT}No interests have been added yet\n${TERMINAL_PROMPT}Please use the admin panel to add content`
+    ? `${TERMINAL_PROMPT}还没有添加任何兴趣内容\n${TERMINAL_PROMPT}请在本地内容数据文件中添加内容`
+    : `${TERMINAL_PROMPT}No interests have been added yet\n${TERMINAL_PROMPT}Add interests in the local content data file`
   , [isZh]);
 
   // 阅读模式渲染

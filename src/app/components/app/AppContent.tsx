@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useContent } from '../content/ContentContext';
-import { useLanguage, useTexts } from '../language/LanguageContext';
+import { useLanguage } from '../language/LanguageContext';
 import TerminalHeader from './TerminalHeader';
 import PageRenderer from './PageRenderer';
 import CRTEffects from './CRTEffects';
-import LoadingScreen from './LoadingScreen';
 import AccessibilityEnhancer from '../shared/AccessibilityEnhancer';
 import EnhancedNavigationBar from './EnhancedNavigationBar';
 import {
   type Section,
   NAVIGATION_EVENT_NAME,
-  LOADING_DELAY,
   TIME_UPDATE_INTERVAL,
 } from './constants';
 import {
@@ -21,14 +19,12 @@ import {
 } from './helpers';
 
 export default function AppContent() {
-  const [currentSection, setCurrentSection] = useState<Section>('home');
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentSection, setCurrentSection] = useState<Section>(() => getInitialSection());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const { isOnline } = useContent();
   const { currentLanguage, isZh } = useLanguage();
-  const texts = useTexts();
 
   const sections = [
     { id: 'home' as Section, title: isZh ? '首页' : 'Home', icon: 'monitor' },
@@ -53,17 +49,6 @@ export default function AppContent() {
   useEffect(() => {
     setLanguageAttribute(currentLanguage);
 
-    const initializeApp = async () => {
-      try {
-        setCurrentSection(getInitialSection());
-        await new Promise((resolve) => window.setTimeout(resolve, LOADING_DELAY));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeApp();
-
     const handleNavigate = (event: Event) => {
       const section = (event as CustomEvent<string>).detail;
       if (isValidSection(section)) navigateToSection(section);
@@ -83,10 +68,6 @@ export default function AppContent() {
     };
   }, [currentLanguage]);
 
-  if (isLoading) {
-    return <LoadingScreen loadingText={texts.common.loading} />;
-  }
-
   return (
     <div className="min-h-screen text-green-400 font-terminal">
       <div className="h-screen flex flex-col">
@@ -100,10 +81,9 @@ export default function AppContent() {
           showQuickActions
           enableSearch
           enableThemeToggle
-          enableShare
         />
 
-        <main id="main-content" role="main" tabIndex={-1}>
+        <main id="main-content" role="main" tabIndex={-1} className="flex-1 min-h-0 overflow-hidden">
           <PageRenderer currentSection={currentSection} />
         </main>
 

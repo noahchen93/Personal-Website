@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Menu, X, Monitor, Activity, Zap, Terminal, Globe, ChevronDown, 
-  Search, Command, Palette, Settings, Share2, Bell, Accessibility
+  Search, Command, Palette, Accessibility
 } from 'lucide-react';
 import { useLanguage } from '../language/LanguageContext';
 import { LanguageToggle } from '../language/LanguageToggle';
 import SmartSearch from '../shared/SmartSearch';
 import ThemeManager from '../shared/ThemeManager';
-import SocialShare from '../shared/SocialShare';
 import AccessibilityEnhancer from '../shared/AccessibilityEnhancer';
 
 interface EnhancedNavigationBarProps {
@@ -19,11 +18,9 @@ interface EnhancedNavigationBarProps {
     icon: string;
   }>;
   isMobileMenuOpen: boolean;
-  onOpenAdminPanel?: () => void;
   showQuickActions?: boolean;
   enableSearch?: boolean;
   enableThemeToggle?: boolean;
-  enableShare?: boolean;
 }
 
 interface QuickAction {
@@ -41,11 +38,9 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
   onSectionChange,
   sections = [],
   isMobileMenuOpen,
-  onOpenAdminPanel,
   showQuickActions = true,
   enableSearch = true,
-  enableThemeToggle = true,
-  enableShare = true
+  enableThemeToggle = true
 }) => {
   const { isZh, currentLanguage, setLanguage } = useLanguage();
   const [showMobileNav, setShowMobileNav] = useState(false);
@@ -99,15 +94,6 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
       action: () => setShowAccessibility(true),
       color: 'green',
       shortcut: 'Alt+A'
-    },
-    {
-      id: 'admin',
-      icon: <Settings className="w-4 h-4" />,
-      label: 'Admin',
-      labelZh: '管理',
-      action: () => onOpenAdminPanel?.(),
-      color: 'orange',
-      shortcut: 'Ctrl+A'
     }
   ];
 
@@ -139,12 +125,6 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
         setShowAccessibility(true);
       }
       
-      // 管理员快捷键 Ctrl+A 或 Cmd+A
-      if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.shiftKey) {
-        e.preventDefault();
-        onOpenAdminPanel?.();
-      }
-      
       // ESC 关闭所有弹窗
       if (e.key === 'Escape') {
         setShowSearch(false);
@@ -157,7 +137,7 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onOpenAdminPanel, currentLanguage, setLanguage]);
+  }, [currentLanguage, setLanguage]);
 
   // 关闭移动端导航
   useEffect(() => {
@@ -306,6 +286,7 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
                     onClick={() => setShowSearch(true)}
                     className="lg:hidden btn-glass-blue p-2 rounded-lg"
                     title={isZh ? '搜索' : 'Search'}
+                    aria-label={isZh ? '搜索' : 'Search'}
                   >
                     <Search className="w-4 h-4" />
                   </button>
@@ -317,6 +298,7 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
                     onClick={() => setShowThemeManager(true)}
                     className="btn-glass-purple p-2 rounded-lg"
                     title={isZh ? '主题' : 'Theme'}
+                    aria-label={isZh ? '主题设置' : 'Theme settings'}
                   >
                     <Palette className="w-4 h-4" />
                   </button>
@@ -327,28 +309,11 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
                   onClick={() => setShowAccessibility(true)}
                   className="btn-glass-green p-2 rounded-lg"
                   title={isZh ? '无障碍设置 (Alt+A)' : 'Accessibility Settings (Alt+A)'}
+                  aria-label={isZh ? '无障碍设置' : 'Accessibility settings'}
                 >
                   <Accessibility className="w-4 h-4" />
                 </button>
 
-                {/* 分享 */}
-                {enableShare && (
-                  <SocialShare 
-                    title={sections.find(s => s.id === activeSection)?.title}
-                    description={isZh ? '个人作品集网站' : 'Personal Portfolio Website'}
-                  />
-                )}
-
-                {/* 管理员 */}
-                {onOpenAdminPanel && (
-                  <button
-                    onClick={onOpenAdminPanel}
-                    className="btn-glass-orange p-2 rounded-lg"
-                    title={isZh ? '管理' : 'Admin'}
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             )}
           </div>
@@ -381,6 +346,7 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
                 <button
                   onClick={() => setShowSearch(true)}
                   className="btn-glass-blue p-2 rounded-lg"
+                  aria-label={isZh ? '搜索' : 'Search'}
                 >
                   <Search className="w-4 h-4" />
                 </button>
@@ -391,23 +357,17 @@ const EnhancedNavigationBar: React.FC<EnhancedNavigationBarProps> = ({
                 onClick={() => setShowAccessibility(true)}
                 className="btn-glass-green p-2 rounded-lg"
                 title={isZh ? '无障碍设置 (Alt+A)' : 'Accessibility Settings (Alt+A)'}
+                aria-label={isZh ? '无障碍设置' : 'Accessibility settings'}
               >
                 <Accessibility className="w-4 h-4" />
               </button>
-
-              {/* 分享按钮 - 移动端专用 */}
-              {enableShare && (
-                <SocialShare 
-                  title={sections.find(s => s.id === activeSection)?.title}
-                  description={isZh ? '个人作品集网站' : 'Personal Portfolio Website'}
-                />
-              )}
 
               {/* 快捷操作菜单 */}
               <div className="relative" ref={quickActionsRef}>
                 <button
                   onClick={() => setShowQuickActionsMenu(!showQuickActionsMenu)}
                   className="btn-glass-purple p-2 rounded-lg"
+                  aria-label={isZh ? '打开快捷操作' : 'Open quick actions'}
                 >
                   <Command className="w-4 h-4" />
                 </button>

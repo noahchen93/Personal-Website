@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useContent } from '../content/ContentContext';
 import { useLanguage } from '../language/LanguageContext';
-import { usePageSEO } from '../shared/SEOContext';
 import { 
   ExternalLink, 
   Brain, 
@@ -15,7 +14,7 @@ import {
   Github
 } from 'lucide-react';
 import UnifiedImage from '../shared/UnifiedImage';
-import MediaRenderer from '../admin/MediaRenderer';
+import MediaRenderer from '../shared/MediaRenderer';
 import { imageService, URLValidator } from '../../utils/ImageService';
 import { usePageLanguageSync } from '../shared/useLanguageSync';
 
@@ -116,19 +115,6 @@ export default function AIExplorePage() {
       setExpandedProjects(new Set());
     }
   );
-
-  const seoConfig = useMemo(() => ({
-    title: isZh ? 'AI探索 | Noah Chen - 人工智能学习与应用' : 'AI Explore | Noah Chen - Artificial Intelligence Learning & Applications',
-    description: isZh
-      ? '探索人工智能的无限可能，记录我在AI领域的学习成果、实际应用和深度思考。从构建智能应用到掌握前沿技术。'
-      : 'Explore the infinite possibilities of artificial intelligence, documenting my learning achievements, practical applications, and deep thinking in the AI field. From building intelligent applications to mastering cutting-edge technologies.',
-    keywords: isZh
-      ? ['AI探索', '人工智能', '机器学习', 'AI应用', 'AI技能', 'AI评测', '智能应用', '前沿技术']
-      : ['AI Exploration', 'Artificial Intelligence', 'Machine Learning', 'AI Applications', 'AI Skills', 'AI Reviews', 'Intelligent Applications', 'Cutting-edge Technology'],
-    type: 'website' as const
-  }), [isZh]);
-
-  usePageSEO('ai-explore', seoConfig);
 
   useEffect(() => {
     getImages().then(setAllImages).catch(() => {});
@@ -312,7 +298,7 @@ export default function AIExplorePage() {
                             objectFit: 'contain',
                             objectPosition: 'center'
                           }}
-                          lazy={false}
+                          lazy={true}
                           showLoadingSpinner={true}
                           allImages={allImages}
                           getImageUrl={getImageUrl}
@@ -517,8 +503,8 @@ export default function AIExplorePage() {
             </h2>
             <p className="text-purple-200 text-small">
               {isZh 
-                ? '> 还没有添加任何AI项目\\n> 请使用管理面板添加内容' 
-                : '> No AI projects have been added yet\\n> Please use the admin panel to add content'
+                ? '> 还没有添加任何AI项目\\n> 请在本地内容数据文件中添加项目'
+                : '> No AI projects have been added yet\\n> Add projects in the local content data file'
               }
             </p>
           </div>

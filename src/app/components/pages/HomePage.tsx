@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Terminal, User, Code, Heart, MessageCircle, ChevronRight, Monitor, Activity, Zap, Building2, ChevronUp, ChevronDown, Calendar, MapPin, GraduationCap, Pause, Play, ArrowLeft, ArrowRight, Eye, ExternalLink, Bot, FileText } from 'lucide-react';
 import { useContent } from '../content/ContentContext';
 import { useLanguage, useTexts } from '../language/LanguageContext';
-import { usePageSEO } from '../shared/SEOContext';
-import MediaRenderer from '../admin/MediaRenderer';
+import MediaRenderer from '../shared/MediaRenderer';
 import UnifiedImage from '../shared/UnifiedImage';
 import AIChatBox from '../chat/AIChatBox';
 import { imageService, URLValidator } from '../../utils/ImageService';
@@ -586,22 +585,6 @@ export default function HomePage() {
       setIsWorkExpanded(false);
     }
   );
-
-  // SEO配置
-  const seoConfig = useMemo(() => ({
-    title: isZh 
-      ? 'Noah Chen - 创意项目与展览经理 | 个人作品集' 
-      : 'Noah Chen - Creative Project & Exhibition Manager | Portfolio',
-    description: isZh
-      ? 'Noah Chen 的双语个人作品集，展示大型展览、文化活动、跨学科项目、内容创作与 AI 实践。'
-      : 'Noah Chen\'s bilingual portfolio featuring large-scale exhibitions, cultural events, interdisciplinary projects, content work and AI experiments.',
-    keywords: isZh
-      ? ['Noah Chen', '陈於建', '展览经理', '创意项目管理', '文化活动', '策展', '个人作品集', 'AI实践']
-      : ['Noah Chen', 'Exhibition Manager', 'Creative Project Management', 'Cultural Events', 'Curating', 'Portfolio', 'AI Practice'],
-    type: 'website' as const
-  }), [isZh]);
-
-  usePageSEO('home', seoConfig);
 
   // 优化加载逻辑 - 减少频繁刷新，只在语言切换时重新加载
   useEffect(() => {

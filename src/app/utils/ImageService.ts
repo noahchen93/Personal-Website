@@ -1,7 +1,4 @@
 import { ImageItem } from '../components/content/ContentContext';
-import { projectId } from './supabase/info';
-
-const supabaseUrl = `https://${projectId}.supabase.co`;
 
 export interface ImageInfo {
   id: string;
@@ -41,8 +38,6 @@ export class URLValidator {
       // Allow common image hosting domains
       const trustedDomains = [
         'unsplash.com',
-        'supabase.co',
-        'flowith.net',
         'xyzcdn.net',
         'githubusercontent.com',
         'imgur.com',
@@ -54,11 +49,6 @@ export class URLValidator {
       }
 
       const pathname = urlObj.pathname.toLowerCase();
-      
-      // Check for Supabase signed URLs
-      if (urlObj.hostname.includes('supabase.co') && (pathname.includes('/object/') || urlObj.searchParams.has('token'))) {
-        return true;
-      }
       
       return this.IMAGE_EXTENSIONS.some(ext => pathname.endsWith(`.${ext}`)) || 
              pathname.includes('/image') || 
@@ -72,8 +62,7 @@ export class URLValidator {
 
   static normalizeUrl(url: string): string {
     if (!url) return '';
-    if (url.startsWith('/assets/')) return url;
-    return url.startsWith('/') ? `${supabaseUrl}${url}` : url;
+    return url;
   }
 }
 
@@ -197,43 +186,10 @@ class ImageService {
       }
     }
 
-    // 尝试构造URL - 增强处理逻辑
-    let constructedUrl = '';
-    
-    // 1. 标准存储路径 - 尝试多个路径模式
-    const basePaths = [
-      `${supabaseUrl}/storage/v1/object/public/make-55b791b3-images/${imageId}`,
-      `${supabaseUrl}/storage/v1/object/public/make-55b791b3-images/images/${imageId}`,
-      `${supabaseUrl}/storage/v1/object/public/make-55b791b3-images/uploads/${imageId}`
-    ];
-    
-    for (const basePath of basePaths) {
-      if (URLValidator.isValidImageUrl(basePath)) {
-        console.log(`[ImageService] Trying base path for ID: ${imageId} -> ${basePath}`);
-        this.cache.set(imageId, { url: basePath, timestamp: Date.now() });
-        return basePath;
-      }
-    }
-
-    // 2. 尝试不同的文件扩展名
-    const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
-    for (const basePath of basePaths) {
-      for (const ext of extensions) {
-        constructedUrl = `${basePath}.${ext}`;
-        if (URLValidator.isValidImageUrl(constructedUrl)) {
-          console.log(`[ImageService] Trying with extension for ID: ${imageId} -> ${constructedUrl}`);
-          this.cache.set(imageId, { url: constructedUrl, timestamp: Date.now() });
-          return constructedUrl;
-        }
-      }
-    }
-
-    // 3. 如果imageId包含路径信息，直接使用
-    if (imageId.includes('/') || imageId.includes('.')) {
-      constructedUrl = `${supabaseUrl}/storage/v1/object/public/make-55b791b3-images/${imageId}`;
-      console.log(`[ImageService] Trying path-based for ID: ${imageId} -> ${constructedUrl}`);
-      this.cache.set(imageId, { url: constructedUrl, timestamp: Date.now() });
-      return constructedUrl;
+    // 静态站点仅接受本地资源路径或完整的图片 URL。
+    if (URLValidator.isValidImageUrl(imageId)) {
+      this.cache.set(imageId, { url: imageId, timestamp: Date.now() });
+      return imageId;
     }
 
     // 返回占位符
@@ -250,15 +206,9 @@ class ImageService {
       return fileUrl;
     }
 
-    if (fileUrl.startsWith('/')) {
-      return `${supabaseUrl}${fileUrl}`;
-    }
-
-    if (filePath) {
-      return `${supabaseUrl}/storage/v1/object/public/make-55b791b3-images/${filePath}`;
-    }
-
-    return `${supabaseUrl}/storage/v1/object/public/make-55b791b3-images/${fileUrl}`;
+    if (fileUrl.startsWith('/')) return fileUrl;
+    if (filePath?.startsWith('/')) return filePath;
+    return `/${fileUrl.replace(/^\/+/, '')}`;
   }
 
   getUnifiedImageUrl(data: any, getImageUrlFn: (id: string) => string): string | null {
