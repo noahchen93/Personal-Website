@@ -4354,6 +4354,20 @@ a:focus-visible,
   margin-bottom: 0 !important;
 }
 
+/* Education timeline: its space-y-6 items are timeline rows (not glass cards),
+   so the glass-card rule above doesn't catch them — and the legacy terminal
+   margin-bottom reset collapses the space-y-6 gap to zero, gluing the rows
+   together. Lay the list out with grid gap and zero the item margins. */
+.portfolio-page__content .space-y-6:has(> .group\/edu) {
+  display: grid;
+  gap: var(--portfolio-card-gap);
+}
+
+.portfolio-page__content .space-y-6:has(> .group\/edu) > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 @media (max-width: 767px) {
   .portfolio-page__content {
     --portfolio-card-gap: 20px;
