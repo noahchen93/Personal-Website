@@ -145,7 +145,7 @@
       "type": "url",
       "title": "Project Maruko - Pitch Deck",
       "content": "",
-      "imageId": "",
+      "imageId": "site-cover-project-maruko",
       "urlImage": "",
       "urlTitle": "Project Maruko - Pitch Deck",
       "urlDomain": "flo.host",
@@ -225,13 +225,13 @@
       "type": "url",
       "title": "Project Maruko - Pitch Deck",
       "content": "",
-      "imageId": "",
+      "imageId": "site-cover-project-maruko",
       "urlImage": "",
       "urlTitle": "Project Maruko - Pitch Deck",
       "urlDomain": "flo.host",
       "description": "",
       "urlDescription": "",
-      "manualCoverImageId": ""
+      "manualCoverImageId": "site-cover-project-maruko"
     },
     "is_published": true,
     "created_at": "2025-08-21 03:00:41.38+00",
@@ -818,13 +818,13 @@
       "type": "url",
       "title": "《机神庚申》- 游戏设计文档",
       "content": "",
-      "imageId": "",
+      "imageId": "site-cover-jishen-gengshen",
       "urlImage": "",
       "urlTitle": "《机神庚申》- 游戏设计文档",
       "urlDomain": "flo.host",
       "description": "",
       "urlDescription": "",
-      "manualCoverImageId": ""
+      "manualCoverImageId": "site-cover-jishen-gengshen"
     },
     "is_published": true,
     "created_at": "2025-08-21 03:02:05.633+00",
@@ -840,7 +840,8 @@
     "data": {
       "title": "3D Printing",
       "content": "I am deeply fascinated by both 3D printing and AI coding. Recently, I purchased a Tuozhu A1 3D printer here in Singapore, and since then, I have been experimenting with printing all sorts of strange and interesting objects—from small decorative items to experimental models. For someone with a humanities background like me, the appeal of these technologies is particularly profound: they allow ideas that only exist in imagination to become tangible, making “creating something from nothing” a reality.\n\nI have found that 3D printing and AI coding share a certain similarity at their core. Both offer a low-threshold way to create, allowing me to transform concepts into tangible outcomes. Whether it’s generating images with AI, designing a program, or materializing an idea through 3D printing, the process is always filled with fascinating unknowns and challenges. Technological advancement has made creation no longer exclusive to professionals—it is now accessible to anyone curious enough to try.\n\nThrough this journey, I feel not only the joy of creation but also a profound respect for technology itself. Each successful print, each smoothly running AI program, amazes me with the power of these tools and inspires me to explore more complex projects. I believe that as these technologies continue to become more widespread, anyone can become a consumer-level creator, shaping a part of the world with their imagination and creativity.",
-      "imageUrl": "",
+      "imageId": "site-cover-3d-printing-a1",
+      "imageUrl": "{{image:site-cover-3d-printing-a1}}",
       "description": "It's magic."
     },
     "is_published": true,
@@ -911,7 +912,7 @@
       "type": "url",
       "title": "陨目大陆 (Yunmu Continent) V3.0 | Worldview Portfolio",
       "content": "",
-      "imageId": "",
+      "imageId": "bbde30ae-66ed-4b04-ba63-acd6bc304efe",
       "urlImage": "",
       "urlTitle": "陨目大陆 (Yunmu Continent) V3.0 | Worldview Portfolio",
       "urlDomain": "flo.host",
@@ -1245,7 +1246,7 @@
           "createdAt": "2025-08-22T12:29:45.953Z",
           "githubUrl": "",
           "urlDomain": "flo.host",
-          "coverImage": "",
+          "coverImage": "{{image:site-cover-cat-language-translator}}",
           "description": "This \"Cat Language Translator\" website allows users to record and play various cat sounds—such as meows, purrs, hisses, chirps, and growls—and provides interpretations of what these vocalizations may mean. Users can also select or describe their cat's behaviors to receive a \"translation\" result. The site includes helpful tips about cat behavior and is working on launching a cat encyclopedia and FAQ section. It's a fun and insightful tool for cat lovers to better understand their feline friends and what they may be expressing.",
           "urlDescription": "",
           "manualCoverImageId": ""
@@ -1263,7 +1264,7 @@
           "createdAt": "2025-08-22T12:47:14.862Z",
           "githubUrl": "",
           "urlDomain": "flo.host",
-          "coverImage": "",
+          "coverImage": "{{image:site-cover-existentialism-platform}}",
           "description": "This is an interactive platform dedicated to existential philosophy, aiming to help users deeply understand core themes such as self, freedom, and responsibility through diverse content and experiences. The website offers structured learning modules, philosopher profiles, interactive tools, and reflective journals, encouraging users to practice existentialist ideas in modern life and seek personal meaning and authenticity.",
           "urlDescription": "",
           "manualCoverImageId": ""
@@ -1353,7 +1354,7 @@
           "createdAt": "2025-08-22T13:17:00.050Z",
           "githubUrl": "",
           "urlDomain": "flo.host",
-          "coverImage": "",
+          "coverImage": "{{image:site-cover-cat-art-history}}",
           "description": "\"Cat Minimalist Western Art History\" is a creative and humorous artistic journey that reinterprets 29 classic Western artworks from a cat's perspective. From Venus of Willendorf to Marilyn Monroe, each piece is reimagined with cats in unique poses and expressions, offering a fresh visual experience. In a lighthearted atmosphere, it showcases the vitality of art transcending forms. This imaginative endeavor aims to inspire viewers' interest in art and the endless joy brought by cats.",
           "urlDescription": "",
           "manualCoverImageId": ""
@@ -1405,6 +1406,8 @@
     "data": {
       "tags": [],
       "title": "Personal Website PRD",
+      "imageId": "site-cover-personal-website-prd",
+      "coverImage": "{{image:site-cover-personal-website-prd}}",
       "content": "# Personal Portfolio Website PRD  \n\n## 📋 Project Overview  \n- **Product Name**: CLI-Style Immersive Personal Portfolio Website  \n- **Positioning**: A futuristic, high-tech, terminal-like personal site  \n- **Core Values**:  \n  - Unique visual experience (full CLI-style UI)  \n  - Complete content management (projects/blogs/interests)  \n  - Smart interaction (AI assistant)  \n  - Internationalization (English/Chinese switch)  \n  - Flexible deployment (cloud DB + local storage)  \n\n---\n\n## 🎯 Users & Needs  \n\n### Visitors  \n- Browse projects/blogs/interests  \n- View skills & contact info  \n- Chat with AI assistant  \n\n### Administrator  \n- Manage projects, blogs, personal info  \n- Configure AI & media assets  \n- Monitor system health  \n\n### Feature Matrix  \n| Module | Visitor | Admin | Priority | Difficulty |  \n|--------|---------|-------|----------|------------|  \n| Projects | ✅ | CRUD | P0 | Medium |  \n| Blog | ✅ | Edit | P0 | Medium |  \n| Profile | ✅ | Update | P0 | Low |  \n| AI Chat | ✅ | Config | P1 | High |  \n| i18n | ✅ | Translate | P0 | Medium |  \n| Media | ✅ | Upload | P0 | Medium |  \n| SEO | Passive | Config | P1 | Medium |  \n| Sync | - | Manage | P1 | High |  \n\n---\n\n## 🛠 Tech Stack  \n\n### Frontend  \n- **Framework**: React 18 + TypeScript + Vite  \n- **Styling**: Tailwind CSS + CLI-style theme  \n- **UI Libraries**: ShadCN/UI, Lucide, Recharts  \n- **State**: React Context + LocalStorage  \n\n### Backend  \n- **DB**: Supabase (PostgreSQL, realtime, storage, auth)  \n- **API**: Edge Functions + REST/WebSocket  \n- **Pattern**: Hybrid (cloud + local), offline-first  \n\n---\n\n## 🏗 Architecture  \n\n### Frontend  \n- Global Providers (i18n/SEO/Auth/Content)  \n- Pages: Home, Projects, Blog, Interests, Contact, AI  \n- State: user info, content, language, SEO  \n\n### Backend  \n- **Tables**: Key-Value store (JSONB)  \n- **Buckets**: project images, blog images, assets  \n- **APIs**: CRUD for projects/blogs, uploads, AI, config  \n\n### Data Flow  \n- **Content**: React → Context → Supabase → DB → LocalStorage  \n- **Upload**: Validate → Supabase Storage → URL → DB  \n- **Realtime**: DB → WebSocket → Context → UI  \n\n---\n\n## 🎨 Design Guidelines  \n\n- **Colors**: Dark navy `#0a0e1a` + blue/cyan/yellow accents  \n- **Typography**: Monospace terminal + English/Chinese fonts  \n- **UI**: 8–16px rounded corners, cursor animation, scanline/glow effects  \n- **Interactions**: 0.2s transitions, hover/click feedback, responsive  \n\n---\n\n## 💻 Core Features  \n\n1. **Projects**: multilingual storage, image preview, sorting, grid layout  \n2. **Blog**: Markdown editor, image insert, live preview, draft saving  \n3. **AI Assistant**: 3rd-party API, contextual chat, multilingual  \n4. **i18n**: React Context, dynamic load, URL params, SEO-friendly  \n5. **CMS**: inline editing, live preview, bulk actions, import/export  \n\n---\n\n## 🧪 Testing & Quality  \n\n- **Unit**: Jest + RTL (components, hooks, APIs)  \n- **Integration**: login, content edit, i18n, uploads  \n- **E2E**: Playwright (full admin flows)  \n- **Performance Goals**: FCP <1.5s, TTI <2.5s, CLS <0.1, LCP <2.5s  \n\n---\n\n## 🚀 Deployment & Ops  \n\n- **Frontend**: Vercel (CDN, compression, Gzip)  \n- **Backend**: Supabase (DB + realtime + storage + auth)  \n- **CI/CD**: GitHub Actions (test + build + deploy)  \n- **Monitoring**: health checks, logging, scheduled backup  \n\n---\n\n## 📈 Roadmap  \n\n- **Phase 1**: CLI theme, CMS basics, i18n, projects+blog, SEO, uploads  \n- **Phase 2**: AI upgrade, advanced editor, analytics, comments, RSS, search  \n- **Phase 3**: Multi-user, open API, mobile, theming, plugins, multi-language  \n- **Phase 4**: AI auto-generation, VR/AR, blockchain, decentralized storage, recommendations, community features  \n\n---\n\n## 🔐 Security & Privacy  \n\n- **Security**: input validation, injection protection, JWT, RLS, CSP  \n- **Privacy**: log retention (30/90 days), limited 3rd-party sharing, GDPR cookie consent  \n\n---\n\n## 📊 Success Metrics  \n\n- **Tech**: performance (FCP/TTI/LCP/CLS), uptime 99.9%, error <0.1%  \n- **Business**: project views, blog reads, AI usage, language preference  \n- **Conversion**: contact rate, project CTR, shares, return visits  \n\n---\n\n## 🎓 Dev Guide  \n\n- **Env**: Node 18+, npm 9+, Git 2.3+  \n- **Setup**: `git clone` → `npm install` → `.env` → `npm run dev`  \n- **Conventions**: ESLint + TS rules, commit format (feat/fix/docs...), branch strategy (main/develop/feature/hotfix)  \n",
       "excerpt": "",
       "published": true
@@ -1618,7 +1621,7 @@
           "createdAt": "2025-08-22T08:06:29.235Z",
           "githubUrl": "",
           "urlDomain": "flo.host",
-          "coverImage": "",
+          "coverImage": "{{image:site-cover-cat-language-translator}}",
           "description": "这个“猫语翻译网站”提供猫咪各种声音（如喵喵叫、呼噜声、嘶嘶声等）的录制和播放，并附带相应的意义解析。用户还可以选择或描述猫的行为，以生成“翻译”结果。网站页面还包含猫咪行为小贴士，以及正在开发中的猫咪百科和常见问答模块，是猫奴了解猫咪情绪与行为的有趣工具。",
           "urlDescription": "",
           "manualCoverImageId": ""
@@ -1636,7 +1639,7 @@
           "createdAt": "2025-08-22T12:46:52.406Z",
           "githubUrl": "",
           "urlDomain": "flo.host",
-          "coverImage": "",
+          "coverImage": "{{image:site-cover-existentialism-platform}}",
           "description": "这是一个专注于存在主义哲学的互动探索平台，旨在通过多元化的内容和体验帮助用户深入理解自我、自由、责任等核心主题。网站提供了系统的学习模块、思想家介绍、互动工具和反思日志，鼓励用户在现代生活中实践存在主义思想，寻找个人意义与真实自我。",
           "urlDescription": "",
           "manualCoverImageId": ""
@@ -1726,7 +1729,7 @@
           "createdAt": "2025-08-22T13:17:17.961Z",
           "githubUrl": "",
           "urlDomain": "flo.host",
-          "coverImage": "",
+          "coverImage": "{{image:site-cover-cat-art-history}}",
           "description": "《猫咪极简西方艺术史》是一场充满创意与幽默的艺术之旅，将29幅西方经典艺术作品以猫咪的视角重新演绎。从维伦多夫的维纳斯到玛丽莲·梦露，每一幅作品都被猫咪以其独特的姿态和表情诠释，带来全新的视觉体验。在轻松幽默的氛围中，感受艺术跨越形式的生命力。这是一次充满奇思妙想的尝试，旨在激发观众对艺术的兴趣，感受猫咪带来的无限乐趣。",
           "urlDescription": "",
           "manualCoverImageId": ""
@@ -1752,13 +1755,13 @@
       "type": "url",
       "title": "陨目大陆 (Yunmu Continent) V3.0 | Worldview Portfolio",
       "content": "",
-      "imageId": "",
+      "imageId": "bbde30ae-66ed-4b04-ba63-acd6bc304efe",
       "urlImage": "",
       "urlTitle": "陨目大陆 (Yunmu Continent) V3.0 | Worldview Portfolio",
       "urlDomain": "flo.host",
       "description": "",
       "urlDescription": "",
-      "manualCoverImageId": ""
+      "manualCoverImageId": "bbde30ae-66ed-4b04-ba63-acd6bc304efe"
     },
     "is_published": true,
     "created_at": "2025-08-21 03:08:40.694+00",
@@ -2026,7 +2029,7 @@
       "type": "url",
       "title": "《机神庚申》- 游戏设计文档",
       "content": "",
-      "imageId": "",
+      "imageId": "site-cover-jishen-gengshen",
       "urlImage": "",
       "urlTitle": "《机神庚申》- 游戏设计文档",
       "urlDomain": "flo.host",
@@ -2133,8 +2136,8 @@
       "type": "url",
       "title": "黑齿电台 - 播客 - Apple 播客",
       "content": "对对方是否",
-      "imageId": "",
-      "urlImage": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts125/v4/0e/53/3d/0e533d6a-f643-b876-1ca2-28dc5d45a25b/mza_4172614425604300580.jpeg/1200x1200bf-60.jpg",
+      "imageId": "site-cover-heichi-radio",
+      "urlImage": "{{image:site-cover-heichi-radio}}",
       "urlTitle": "黑齿电台 - 播客 - Apple 播客",
       "isPodcast": true,
       "urlDomain": "podcasts.apple.com",
@@ -2147,7 +2150,7 @@
         "showInfo": null
       },
       "urlDescription": "在 Apple 播客上收听听友22067780频道的《黑齿电台》播客。",
-      "manualCoverImageId": ""
+      "manualCoverImageId": "site-cover-heichi-radio"
     },
     "is_published": true,
     "created_at": "2025-09-11 02:38:05.858+00",
@@ -2268,8 +2271,8 @@
       "type": "url",
       "title": "卡壳 Cacotopia | 小宇宙 - 听播客，上小宇宙",
       "content": "",
-      "imageId": "",
-      "urlImage": "https://bts-image.xyzcdn.net/aHR0cHM6Ly9jZG4ubGl6aGkuZm0vcG9kY2FzdF9jb3Zlci8yMDIxLzAzLzExLzI4NjA5MTM2Mzc4ODIyMTM5NTkucG5n.png",
+      "imageId": "site-cover-cacotopia",
+      "urlImage": "{{image:site-cover-cacotopia}}",
       "urlTitle": "卡壳 Cacotopia | 小宇宙 - 听播客，上小宇宙",
       "isPodcast": true,
       "urlDomain": "www.xiaoyuzhoufm.com",
@@ -2282,7 +2285,7 @@
         "showInfo": null
       },
       "urlDescription": "“卡壳”是一个收集不同声音的播客项目，专注于那些在日常生活中容易被忽略的声音。“卡壳”将每期邀请到1～2位艺术家、学者、研究者作为嘉宾，与我们共同分享他们跨学科的创作、文本和思考。",
-      "manualCoverImageId": ""
+      "manualCoverImageId": "site-cover-cacotopia"
     },
     "is_published": true,
     "created_at": "2025-09-11 06:58:44.898+00",

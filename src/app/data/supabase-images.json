@@ -658,5 +658,113 @@
     "caption": "来自 uploads 目录",
     "uploaded_by": null,
     "uploaded_at": "2025-08-22 18:15:32.959+00"
+  },
+  {
+    "id": "site-cover-project-maruko",
+    "filename": "project-maruko.png",
+    "file_path": "site-covers/project-maruko.png",
+    "file_url": "/assets/site-covers/project-maruko.png",
+    "file_type": "image/png",
+    "file_size": 40963,
+    "alt_text": "Project Maruko pitch deck",
+    "caption": "Captured from the live project website",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-jishen-gengshen",
+    "filename": "jishen-gengshen.png",
+    "file_path": "site-covers/jishen-gengshen.png",
+    "file_url": "/assets/site-covers/jishen-gengshen.png",
+    "file_type": "image/png",
+    "file_size": 98406,
+    "alt_text": "机神庚申游戏设计文档",
+    "caption": "Captured from the live project website",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-3d-printing-a1",
+    "filename": "3d-printing-a1.png",
+    "file_path": "site-covers/3d-printing-a1.png",
+    "file_url": "/assets/site-covers/3d-printing-a1.png",
+    "file_type": "image/png",
+    "file_size": 31772,
+    "alt_text": "Bambu Lab A1 3D printer",
+    "caption": "Product image from the official Bambu Lab website",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-personal-website-prd",
+    "filename": "personal-website-prd.png",
+    "file_path": "site-covers/personal-website-prd.png",
+    "file_url": "/assets/site-covers/personal-website-prd.png",
+    "file_type": "image/png",
+    "file_size": 143080,
+    "alt_text": "Noah Chen personal portfolio website",
+    "caption": "Captured from the live portfolio website",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-cat-language-translator",
+    "filename": "cat-language-translator.png",
+    "file_path": "site-covers/cat-language-translator.png",
+    "file_url": "/assets/site-covers/cat-language-translator.png",
+    "file_type": "image/png",
+    "file_size": 70372,
+    "alt_text": "猫语翻译网站",
+    "caption": "Captured from the live project website",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-existentialism-platform",
+    "filename": "existentialism-platform.png",
+    "file_path": "site-covers/existentialism-platform.png",
+    "file_url": "/assets/site-covers/existentialism-platform.png",
+    "file_type": "image/png",
+    "file_size": 106283,
+    "alt_text": "存在主义科普互动网站",
+    "caption": "Captured from the live project website",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-cat-art-history",
+    "filename": "cat-art-history.png",
+    "file_path": "site-covers/cat-art-history.png",
+    "file_url": "/assets/site-covers/cat-art-history.png",
+    "file_type": "image/png",
+    "file_size": 51988,
+    "alt_text": "猫咪极简西方艺术史",
+    "caption": "Captured from the live project website",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-heichi-radio",
+    "filename": "heichi-radio.webp",
+    "file_path": "site-covers/heichi-radio.webp",
+    "file_url": "/assets/site-covers/heichi-radio.webp",
+    "file_type": "image/webp",
+    "file_size": 9182,
+    "alt_text": "黑齿电台播客封面",
+    "caption": "Podcast artwork from Apple Podcasts",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
+  },
+  {
+    "id": "site-cover-cacotopia",
+    "filename": "cacotopia.png",
+    "file_path": "site-covers/cacotopia.png",
+    "file_url": "/assets/site-covers/cacotopia.png",
+    "file_type": "image/png",
+    "file_size": 94275,
+    "alt_text": "卡壳 Cacotopia 播客封面",
+    "caption": "Podcast artwork from Xiaoyuzhou",
+    "uploaded_by": null,
+    "uploaded_at": "2026-07-24 00:00:00+08"
   }
 ]
