@@ -292,7 +292,7 @@ export default function AIExplorePage() {
                           alt={project.urlTitle || project.title}
                           className="group-hover:scale-105 transition-transform duration-500 filter group-hover:brightness-110"
                           style={{ 
-                            objectFit: 'cover',
+                            objectFit: 'contain',
                             objectPosition: 'center'
                           }}
                           lazy={true}

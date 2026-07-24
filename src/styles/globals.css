@@ -4136,3 +4136,184 @@ a:focus-visible,
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ==========================================================================
+   Bright portfolio palette + uncropped media
+   ========================================================================== */
+
+.portfolio-backdrop__orb {
+  opacity: 0.22;
+}
+
+.portfolio-backdrop__orb--blue {
+  background: #2563eb;
+}
+
+.portfolio-backdrop__orb--violet {
+  background: #a855f7;
+}
+
+.portfolio-nav__active-pill {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(168, 85, 247, 0.2));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.12),
+    0 8px 24px rgba(59, 130, 246, 0.18);
+}
+
+.portfolio-masthead__mark {
+  border-color: rgba(96, 165, 250, 0.48);
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.38), rgba(168, 85, 247, 0.2));
+  box-shadow: 0 8px 22px rgba(59, 130, 246, 0.18);
+}
+
+.glass-blue {
+  --surface-accent: 59, 130, 246;
+  border-color: rgba(96, 165, 250, 0.42) !important;
+  background:
+    radial-gradient(circle at 85% 0%, rgba(96, 165, 250, 0.3), transparent 42%),
+    linear-gradient(145deg, rgba(37, 99, 235, 0.27), rgba(30, 64, 175, 0.1) 58%),
+    rgba(10, 18, 38, 0.92) !important;
+  box-shadow: 0 24px 70px rgba(37, 99, 235, 0.16) !important;
+}
+
+.glass-orange {
+  --surface-accent: 249, 115, 22;
+  border-color: rgba(251, 146, 60, 0.43) !important;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(251, 146, 60, 0.28), transparent 42%),
+    linear-gradient(145deg, rgba(234, 88, 12, 0.24), rgba(124, 45, 18, 0.09) 58%),
+    rgba(30, 17, 12, 0.93) !important;
+  box-shadow: 0 24px 70px rgba(234, 88, 12, 0.15) !important;
+}
+
+.glass-purple {
+  --surface-accent: 168, 85, 247;
+  border-color: rgba(192, 132, 252, 0.44) !important;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(192, 132, 252, 0.3), transparent 42%),
+    linear-gradient(145deg, rgba(126, 34, 206, 0.26), rgba(88, 28, 135, 0.1) 58%),
+    rgba(24, 13, 35, 0.93) !important;
+  box-shadow: 0 24px 70px rgba(147, 51, 234, 0.16) !important;
+}
+
+.glass-green {
+  --surface-accent: 34, 197, 94;
+  border-color: rgba(74, 222, 128, 0.4) !important;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(74, 222, 128, 0.24), transparent 42%),
+    linear-gradient(145deg, rgba(21, 128, 61, 0.25), rgba(20, 83, 45, 0.09) 58%),
+    rgba(10, 29, 20, 0.93) !important;
+  box-shadow: 0 24px 70px rgba(22, 163, 74, 0.14) !important;
+}
+
+.glass-cyan {
+  --surface-accent: 6, 182, 212;
+  border-color: rgba(34, 211, 238, 0.42) !important;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(34, 211, 238, 0.27), transparent 42%),
+    linear-gradient(145deg, rgba(8, 145, 178, 0.25), rgba(22, 78, 99, 0.09) 58%),
+    rgba(8, 25, 32, 0.93) !important;
+  box-shadow: 0 24px 70px rgba(6, 182, 212, 0.14) !important;
+}
+
+.glass-pink {
+  --surface-accent: 236, 72, 153;
+  border-color: rgba(244, 114, 182, 0.42) !important;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(244, 114, 182, 0.28), transparent 42%),
+    linear-gradient(145deg, rgba(190, 24, 93, 0.25), rgba(131, 24, 67, 0.09) 58%),
+    rgba(32, 10, 23, 0.93) !important;
+  box-shadow: 0 24px 70px rgba(219, 39, 119, 0.14) !important;
+}
+
+.glass-amber {
+  --surface-accent: 245, 158, 11;
+  border-color: rgba(251, 191, 36, 0.42) !important;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(251, 191, 36, 0.26), transparent 42%),
+    linear-gradient(145deg, rgba(217, 119, 6, 0.24), rgba(120, 53, 15, 0.08) 58%),
+    rgba(31, 22, 8, 0.93) !important;
+  box-shadow: 0 24px 70px rgba(245, 158, 11, 0.14) !important;
+}
+
+.glass-rose {
+  --surface-accent: 244, 63, 94;
+  border-color: rgba(251, 113, 133, 0.42) !important;
+  background:
+    radial-gradient(circle at 86% 0%, rgba(251, 113, 133, 0.26), transparent 42%),
+    linear-gradient(145deg, rgba(225, 29, 72, 0.23), rgba(136, 19, 55, 0.09) 58%),
+    rgba(33, 10, 17, 0.93) !important;
+}
+
+:is(.glass-blue, .glass-cyan, .glass-purple, .glass-green, .glass-orange, .glass-pink, .glass-amber, .glass-rose):hover {
+  border-color: rgba(var(--surface-accent), 0.65) !important;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.34),
+    0 0 34px rgba(var(--surface-accent), 0.16) !important;
+}
+
+.project-card__expand,
+.project-card__expand * {
+  color: #fdba74 !important;
+}
+
+.project-card__meta > span {
+  border-color: rgba(251, 146, 60, 0.28);
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.project-card__technologies span {
+  border-color: rgba(96, 165, 250, 0.3);
+  color: #bfdbfe !important;
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.ai-card .btn-glass-purple,
+.ai-url-card__visit {
+  border-color: rgba(192, 132, 252, 0.38) !important;
+  color: #e9d5ff !important;
+  background: rgba(168, 85, 247, 0.17) !important;
+}
+
+.blog-card :is(.text-green-200, .text-green-300) {
+  color: #86efac !important;
+}
+
+.unified-image,
+.project-card__media .unified-image,
+.ai-explore-cover-image .unified-image,
+.blog-cover-image .unified-image,
+.portfolio-page__content img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+.page-section--projects .page-intro {
+  border-color: rgba(96, 165, 250, 0.48);
+  background:
+    radial-gradient(circle at 82% 0%, rgba(96, 165, 250, 0.35), transparent 42%),
+    linear-gradient(145deg, rgba(37, 99, 235, 0.28), rgba(30, 64, 175, 0.1) 58%),
+    rgba(10, 18, 38, 0.94);
+  box-shadow: 0 24px 70px rgba(37, 99, 235, 0.17);
+}
+
+.page-section--projects .page-intro__eyebrow,
+.page-section--projects .page-intro__eyebrow * {
+  color: #93c5fd !important;
+}
+
+.project-card__media,
+.ai-explore-cover-image,
+.blog-cover-image,
+.cover-image-container {
+  background:
+    radial-gradient(circle at center, rgba(var(--surface-accent, 96, 165, 250), 0.12), transparent 64%),
+    rgba(5, 8, 14, 0.64) !important;
+}
+
+.project-card:hover .project-card__media .unified-image,
+.ai-card:hover .unified-image,
+.blog-card:hover .unified-image {
+  transform: none !important;
+}

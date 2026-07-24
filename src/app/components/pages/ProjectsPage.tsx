@@ -218,7 +218,7 @@ export default function ProjectsPage() {
                 src={imageUrl}
                 alt={project.data.title}
                 className="w-full h-full"
-                style={{ objectFit: 'cover', objectPosition: 'center' }}
+                style={{ objectFit: 'contain', objectPosition: 'center' }}
                 lazy
                 showLoadingSpinner
                 allImages={allImages}
