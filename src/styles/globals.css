@@ -2811,7 +2811,7 @@ a:focus-visible,
   outline-offset: 3px !important;
 }
 
-.portfolio-shell {
+.portfolio-page__content {
   position: relative;
   isolation: isolate;
   min-height: 100%;
@@ -4316,4 +4316,47 @@ a:focus-visible,
 .ai-card:hover .unified-image,
 .blog-card:hover .unified-image {
   transform: none !important;
+}
+
+/* Card rhythm
+   Legacy terminal content resets nested margins, so layout spacing is defined
+   explicitly at the card-container level instead of relying on text margins. */
+.portfolio-shell {
+  --portfolio-card-gap: clamp(24px, 2.2vw, 36px);
+  --portfolio-section-gap: clamp(28px, 3vw, 44px);
+}
+
+.page-section {
+  gap: var(--portfolio-section-gap);
+}
+
+.project-grid,
+.blog-grid,
+.portfolio-page__content .grid:has(> .ai-card),
+.portfolio-page__content .grid:has(> .transform > :is(.glass-pink, .glass-purple)) {
+  gap: var(--portfolio-card-gap) !important;
+}
+
+.portfolio-page__content
+  :is(.glass-blue, .glass-purple, .glass-green, .glass-pink, .glass-cyan):has(h1) {
+  margin-bottom: var(--portfolio-section-gap) !important;
+}
+
+.portfolio-page__content
+  .space-y-6:has(> :is(.glass-blue, .glass-orange, .glass-purple, .glass-green, .glass-cyan, .glass-pink)) {
+  display: grid;
+  gap: var(--portfolio-card-gap);
+}
+
+.portfolio-page__content
+  .space-y-6:has(> :is(.glass-blue, .glass-orange, .glass-purple, .glass-green, .glass-cyan, .glass-pink))
+  > * {
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 767px) {
+  .portfolio-page__content {
+    --portfolio-card-gap: 20px;
+    --portfolio-section-gap: 24px;
+  }
 }
