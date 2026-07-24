@@ -206,61 +206,54 @@ export default function ProjectsPage() {
       <div 
         key={project.id}
         id={project.id}
-        className={`glass-orange rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.01] group ${
-          isExpanded ? 'h-auto' : ''
+        className={`project-card glass-orange group ${
+          isExpanded ? 'is-expanded lg:col-span-2' : ''
         }`}
       >
-        <div className={`flex ${isExpanded ? 'h-auto min-h-[20rem]' : 'h-80 md:h-96'}`}>
+        <div className="project-card__layout">
 
-          <div className="w-[40%] max-w-[40%] relative overflow-hidden project-cover-image flex-shrink-0 rounded-[20px]">
+          <div className="project-card__media project-cover-image">
             {imageUrl ? (
-              <div className="unified-image-container w-full h-full bg-black/20 flex items-center justify-center">
-                <UnifiedImage
-                  src={imageUrl}
-                  alt={project.data.title}
-                  className="unified-image w-full h-full object-contain"
-                  style={{ 
-                    objectFit: 'contain',
-                    objectPosition: 'center',
-                    maxWidth: '100%',
-                    maxHeight: '100%'
-                  }}
-                  lazy={true}
-                  showLoadingSpinner={true}
-                  allImages={allImages}
-                  getImageUrl={getImageUrl}
-                  centerImage={true}
-                />
-              </div>
+              <UnifiedImage
+                src={imageUrl}
+                alt={project.data.title}
+                className="w-full h-full"
+                style={{ objectFit: 'cover', objectPosition: 'center' }}
+                lazy
+                showLoadingSpinner
+                allImages={allImages}
+                getImageUrl={getImageUrl}
+                centerImage
+              />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-orange-800/50 to-orange-900/50 flex items-center justify-center">
+              <div className="project-card__placeholder">
                 <div className="text-center space-y-2">
-                  <div className="w-12 h-12 mx-auto bg-orange-700/50 rounded-full flex items-center justify-center">
-                    <Code className="w-6 h-6 text-orange-400" />
+                  <div className="project-card__placeholder-icon">
+                    <Code />
                   </div>
-                  <p className="text-small text-orange-300">{isZh ? '项目封面' : 'Cover'}</p>
+                  <p>{isZh ? '项目封面' : 'Project cover'}</p>
                 </div>
               </div>
             )}
             
 
             {project.data.featured && (
-              <div className="absolute top-2 left-2">
-                <span className="bg-green-500/90 text-white px-2 py-1 rounded-xl text-small font-medium flex items-center space-x-1">
-                  <Star className="w-3 h-3" />
+              <div className="project-card__featured">
+                <span>
+                  <Star aria-hidden="true" />
                   <span>{isZh ? '精选' : 'FEATURED'}</span>
                 </span>
               </div>
             )}
 
 
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 rounded-[0px]">
+            <div className="project-card__media-actions">
               {(project.data.link || project.data.liveUrl) && (
                 <a
                   href={project.data.link || project.data.liveUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-glass-green flex items-center space-x-1 px-2 py-1 rounded-xl text-small"
+                  className="project-card__media-link"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExternalLink className="w-3 h-3" />
@@ -273,7 +266,7 @@ export default function ProjectsPage() {
                   href={project.data.repository || project.data.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-glass-cyan flex items-center space-x-1 px-2 py-1 rounded-xl text-small"
+                  className="project-card__media-link"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Github className="w-3 h-3" />
@@ -284,24 +277,24 @@ export default function ProjectsPage() {
           </div>
 
 
-          <div className="w-[60%] flex flex-col px-[32px] py-[16px] px-[128px]">
+          <div className="project-card__body">
 
-            <div className="flex-shrink-0 mb-3">
-              <h3 className="text-medium font-medium text-white line-clamp-2 leading-tight mb-2">
+            <div className="project-card__header">
+              <h3>
                 {project.data.title}
               </h3>
 
 
-              <div className="flex flex-wrap gap-1 mb-2">
+              <div className="project-card__meta">
                 {project.data.role && (
-                  <span className="bg-purple-500/20 text-purple-200 px-2 py-1 text-small rounded-xl border border-purple-400/30 flex items-center space-x-1">
-                    <Users className="w-3 h-3" />
+                  <span>
+                    <Users aria-hidden="true" />
                     <span>{project.data.role}</span>
                   </span>
                 )}
                 {project.data.period && (
-                  <span className="bg-cyan-500/20 text-cyan-200 px-2 py-1 text-small rounded-xl border border-cyan-400/30 flex items-center space-x-1">
-                    <Calendar className="w-3 h-3" />
+                  <span>
+                    <Calendar aria-hidden="true" />
                     <span>{project.data.period}</span>
                   </span>
                 )}
@@ -309,10 +302,13 @@ export default function ProjectsPage() {
             </div>
 
 
-            <div className={`flex-1 ${isExpanded ? 'overflow-visible' : 'overflow-hidden'}`}>
+            <div
+              id={`project-details-${project.id}`}
+              className={`project-card__description ${isExpanded ? 'is-expanded' : ''}`}
+            >
               {project.data.description && (
                 <div className="space-y-3 h-full flex flex-col">
-                  <div className="text-small text-orange-100 leading-relaxed">
+                  <div>
                     <MediaRenderer 
                       content={isExpanded ? project.data.description : truncatedDescription} 
                       className="terminal-content"
@@ -327,8 +323,8 @@ export default function ProjectsPage() {
                         <span>{isZh ? '项目亮点' : 'Key Features'}</span>
                       </h4>
                       <div className="space-y-1 max-h-none overflow-visible">
-                        {project.data.highlights.map((highlight, idx) => (
-                          <div key={idx} className="text-small text-green-200 flex items-start space-x-2">
+                        {project.data.highlights.map((highlight) => (
+                          <div key={highlight} className="text-small text-green-200 flex items-start space-x-2">
                             <span className="text-green-300 mt-0.5 flex-shrink-0">•</span>
                             <MediaRenderer content={highlight} className="terminal-content flex-1" />
                           </div>
@@ -342,18 +338,17 @@ export default function ProjectsPage() {
 
 
             {project.data.technologies && project.data.technologies.length > 0 && (
-              <div className="flex-shrink-0 mt-3 mb-3">
-                <div className="flex flex-wrap gap-1">
-                  {project.data.technologies.slice(0, isExpanded ? undefined : 4).map((tech, idx) => (
+              <div className="project-card__technologies">
+                <div>
+                  {project.data.technologies.slice(0, isExpanded ? undefined : 4).map((tech) => (
                     <span
-                      key={idx}
-                      className="bg-black/30 border border-blue-300/50 text-blue-200 px-2 py-1 text-small rounded-xl"
+                      key={tech}
                     >
                       {tech}
                     </span>
                   ))}
                   {!isExpanded && project.data.technologies.length > 4 && (
-                    <span className="text-orange-200 text-small px-2 py-1 bg-orange-500/20 rounded-xl border border-orange-400/30">
+                    <span>
                       +{project.data.technologies.length - 4}
                     </span>
                   )}
@@ -362,7 +357,7 @@ export default function ProjectsPage() {
             )}
 
 
-            <div className="flex-shrink-0 space-y-2">
+            <div className="project-card__footer">
 
               {shouldExpand && (
                 <button
@@ -372,7 +367,9 @@ export default function ProjectsPage() {
 
                     toggleProjectExpansion(project.id);
                   }}
-                  className="w-full btn-glass-orange flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-small hover:bg-orange-500/30 transition-colors duration-200 p-[0px]"
+                  className="project-card__expand"
+                  aria-expanded={isExpanded}
+                  aria-controls={`project-details-${project.id}`}
                 >
                   {isExpanded ? (
                     <>
@@ -389,13 +386,13 @@ export default function ProjectsPage() {
               )}
 
               {/* 移动端操作按钮 */}
-              <div className="flex space-x-2 md:hidden">
+              <div className="project-card__mobile-links">
                 {(project.data.link || project.data.liveUrl) && (
                   <a
                     href={project.data.link || project.data.liveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-glass-green flex items-center space-x-1 px-3 py-2 rounded-xl text-small flex-1 justify-center"
+                    className="project-card__mobile-link"
                   >
                     <ExternalLink className="w-3 h-3" />
                     <span>{isZh ? '演示' : 'Demo'}</span>
@@ -407,7 +404,7 @@ export default function ProjectsPage() {
                     href={project.data.repository || project.data.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-glass-cyan flex items-center space-x-1 px-3 py-2 rounded-xl text-small flex-1 justify-center"
+                    className="project-card__mobile-link"
                   >
                     <Github className="w-3 h-3" />
                     <span>{isZh ? '代码' : 'Code'}</span>
@@ -423,21 +420,22 @@ export default function ProjectsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-8 font-terminal text-green-400 custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="page-section">
+        <div className="portfolio-grid">
           {/* Header Skeleton */}
-          <div className="glass-blue rounded-xl p-8">
+          <div className="page-intro portfolio-skeleton">
             <div className="h-8 bg-gray-700/50 rounded-xl mb-4 w-1/3 animate-pulse"></div>
             <div className="h-4 bg-gray-800/50 rounded-xl mb-2 animate-pulse"></div>
             <div className="h-4 bg-gray-800/50 rounded-xl w-2/3 animate-pulse"></div>
           </div>
 
           {/* Project Skeletons */}
+          <div className="project-grid">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="glass-orange rounded-xl overflow-hidden">
-              <div className="flex h-80">
-                <div className="w-[40%] bg-gray-700/50 animate-pulse"></div>
-                <div className="w-[60%] p-4 space-y-4">
+            <div key={i} className="project-card glass-orange overflow-hidden">
+              <div className="project-card__layout">
+                <div className="project-card__media bg-gray-700/50 animate-pulse"></div>
+                <div className="project-card__body space-y-4">
                   <div className="h-6 bg-gray-700/50 rounded-xl w-3/4 animate-pulse"></div>
                   <div className="space-y-2">
                     <div className="h-3 bg-gray-800/50 rounded-xl animate-pulse"></div>
@@ -451,44 +449,46 @@ export default function ProjectsPage() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8 font-terminal text-green-400 custom-scrollbar">
+    <div className="page-section page-section--projects">
       {/* Page Header */}
-      <div className="max-w-7xl mx-auto">
-        <div className="glass-blue rounded-xl transition-all duration-300 py-[0px] px-[32px]">
-          <div className="flex items-center space-x-3 mb-6">
-            <Code className="w-6 h-6 text-blue-200" />
-            <h1 className="text-large text-white tracking-wide">
+      <div className="portfolio-grid">
+        <section className="page-intro">
+          <div className="page-intro__eyebrow">
+            <Code aria-hidden="true" />
+            <span>{isZh ? '作品索引' : 'Selected work'}</span>
+          </div>
+          <div className="page-intro__body">
+            <h1>
               [PROJECTS] {isZh ? '项目展示' : 'Project Showcase'}
             </h1>
-          </div>
-          
-          <div className="text-medium text-blue-100 mb-4">
+            <p>
             {isZh 
-              ? '> 我工作经历中的一些项目 '
-              : '> Explore my projects experience'}
+              ? '产品、交互与 AI 实践中的代表项目。'
+              : 'Selected product, interaction and AI work.'}
+            </p>
           </div>
-          
-          <div className="flex items-center space-x-4 text-small text-blue-200">
-            <div className="flex items-center space-x-2">
+          <div className="page-intro__stats">
+            <div>
               <Monitor className="w-4 h-4" />
               <span>{projects.length} {isZh ? '个项目' : 'Projects'}</span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div>
               <Star className="w-4 h-4" />
               <span>{projects.filter(p => p.data.featured).length} {isZh ? '个精选' : 'Featured'}</span>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
       {/* Projects List */}
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="portfolio-grid project-grid">
         {projects.length > 0 ? (
           projects.map((project) => renderProjectCard(project))
         ) : (

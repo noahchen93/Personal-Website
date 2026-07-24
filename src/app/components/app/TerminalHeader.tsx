@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 interface TerminalHeaderProps {
   isZh: boolean;
@@ -8,30 +8,30 @@ interface TerminalHeaderProps {
 
 export default function TerminalHeader({ isZh, isOnline }: TerminalHeaderProps) {
   return (
-    <div className="bg-gray-800 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
-      <div className="flex items-center space-x-3">
-
-        <div className="flex space-x-2">
-          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+    <header className="portfolio-masthead">
+      <div className="portfolio-masthead__identity">
+        <div className="portfolio-masthead__mark" aria-hidden="true">
+          NC
         </div>
-        
-
-        <div className="flex items-center space-x-2 text-gray-300 text-small">
-          <Terminal className="w-4 h-4" />
-          <span>{isZh ? '个人作品集' : 'Portfolio'}</span>
+        <div>
+          <p className="portfolio-masthead__name">Noah Chen</p>
+          <p className="portfolio-masthead__role">
+            {isZh ? '产品设计 · AI 实践' : 'Product design · AI practice'}
+          </p>
         </div>
       </div>
-      
 
-      <div className="flex items-center space-x-1 text-small">
-        {isOnline ? (
-          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-        ) : (
-          <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-        )}
+      <div className="portfolio-masthead__meta">
+        <span className={`portfolio-status ${isOnline ? 'is-online' : 'is-offline'}`}>
+          <span className="portfolio-status__dot" />
+          {isOnline
+            ? (isZh ? '内容已同步' : 'Content synced')
+            : (isZh ? '本地内容' : 'Local content')}
+        </span>
+        <span className="portfolio-masthead__edition">
+          2026 <ArrowUpRight aria-hidden="true" />
+        </span>
       </div>
-    </div>
+    </header>
   );
 }

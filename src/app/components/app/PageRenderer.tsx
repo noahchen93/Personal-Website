@@ -1,18 +1,20 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Section } from './constants';
-
-const HomePage = lazy(() => import('../pages/HomePage'));
-const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
-const AIExplorePage = lazy(() => import('../pages/AIExplorePage'));
-const BlogPage = lazy(() => import('../pages/BlogPage'));
-const InterestsPage = lazy(() => import('../pages/InterestsPage'));
-const ContactPage = lazy(() => import('../pages/ContactPage'));
+import HomePage from '../pages/HomePage';
+import ProjectsPage from '../pages/ProjectsPage';
+import AIExplorePage from '../pages/AIExplorePage';
+import BlogPage from '../pages/BlogPage';
+import InterestsPage from '../pages/InterestsPage';
+import ContactPage from '../pages/ContactPage';
 
 interface PageRendererProps {
   currentSection: Section;
 }
 
 export default function PageRenderer({ currentSection }: PageRendererProps) {
+  const reduceMotion = useReducedMotion();
+
   const renderSection = () => {
     switch (currentSection) {
       case 'home':
@@ -33,20 +35,18 @@ export default function PageRenderer({ currentSection }: PageRendererProps) {
   };
 
   return (
-    <div className="h-full overflow-auto bg-black px-4 py-6 md:px-8 lg:px-12 xl:px-16 custom-scrollbar">
-      <div className="terminal-content w-full">
-        <div className="prose prose-invert prose-lg max-w-none">
-          <Suspense
-            fallback={(
-              <div className="min-h-48 flex items-center justify-center text-green-300 font-terminal">
-                Loading…
-              </div>
-            )}
-          >
-            {renderSection()}
-          </Suspense>
+    <div className="portfolio-page-scroll custom-scrollbar">
+      <motion.div
+        key={currentSection}
+        className="portfolio-page"
+        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="terminal-content portfolio-page__content">
+          {renderSection()}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

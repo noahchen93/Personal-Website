@@ -280,10 +280,9 @@ export default function AIExplorePage() {
                 <div 
                   key={project.id}
                   id={project.id}
-                  className={`glass-purple rounded-lg transition-all duration-300 hover:transform hover:-translate-y-2 group overflow-hidden shadow-2xl ${
-                    isUrlType ? 'cursor-pointer' : ''
+                  className={`ai-card glass-purple rounded-lg transition-all duration-300 hover:transform hover:-translate-y-2 group overflow-hidden shadow-2xl ${
+                    isUrlType ? 'ai-url-card' : ''
                   }`}
-                  onClick={isUrlType ? () => handleUrlProjectClick(project) : undefined}
                 >
                   <div className="relative">
                     {imageUrl ? (
@@ -293,9 +292,7 @@ export default function AIExplorePage() {
                           alt={project.urlTitle || project.title}
                           className="group-hover:scale-105 transition-transform duration-500 filter group-hover:brightness-110"
                           style={{ 
-                            maxHeight: '300px', 
-                            minHeight: '150px',
-                            objectFit: 'contain',
+                            objectFit: 'cover',
                             objectPosition: 'center'
                           }}
                           lazy={true}
@@ -338,6 +335,7 @@ export default function AIExplorePage() {
                           toggleProjectExpansion(project.id);
                         }}
                         className="btn-glass-purple px-3 py-1.5 rounded text-small flex items-center space-x-1 flex-shrink-0"
+                        aria-expanded={isExpanded}
                       >
                         <span className="text-small">{isExpanded ? (isZh ? '收起' : 'Less') : (isZh ? '详情' : 'More')}</span>
                         {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -361,9 +359,9 @@ export default function AIExplorePage() {
 
                     {project.tags && project.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-4">
-                        {project.tags.slice(0, isExpanded ? undefined : 3).map((tag, idx) => (
+                        {project.tags.slice(0, isExpanded ? undefined : 3).map((tag) => (
                           <button
-                            key={idx}
+                            key={tag}
                             onClick={(e) => handleTagClick(project, e)}
                             className="bg-black/40 border border-purple-300/70 text-purple-200 px-2 py-1 text-small rounded font-terminal hover:bg-purple-500/30 hover:text-white hover:border-purple-300 transition-all duration-200 cursor-pointer"
                             title={isZh ? `点击预览 "${project.title}"` : `Click to preview "${project.title}"`}
@@ -415,17 +413,24 @@ export default function AIExplorePage() {
                             handleVisitSite(project.githubUrl);
                           }}
                           className="btn-glass-amber flex items-center space-x-2 px-3 py-1.5 rounded text-small"
+                          aria-label={`${project.urlTitle || project.title} GitHub`}
+                          title={`${project.urlTitle || project.title} GitHub`}
                         >
-                          <Github className="w-3 h-3" />
+                          <Github className="w-3 h-3" aria-hidden="true" />
                         </button>
                       )}
                     </div>
                     
 
-                    {isUrlType && (
-                      <div className="text-center text-xs text-purple-300/70 mt-3 border-t border-purple-300/20 pt-3">
-                        {isZh ? '点击卡片访问完整页面' : 'Click card to visit full page'}
-                      </div>
+                    {isUrlType && project.url && (
+                      <button
+                        type="button"
+                        onClick={() => handleUrlProjectClick(project)}
+                        className="ai-url-card__visit"
+                      >
+                        <span>{isZh ? '访问完整网站' : 'Visit website'}</span>
+                        <ExternalLink aria-hidden="true" />
+                      </button>
                     )}
                   </div>
 

@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useContent } from '../content/ContentContext';
 import { useLanguage } from '../language/LanguageContext';
 import TerminalHeader from './TerminalHeader';
 import PageRenderer from './PageRenderer';
-import CRTEffects from './CRTEffects';
-import AccessibilityEnhancer from '../shared/AccessibilityEnhancer';
 import EnhancedNavigationBar from './EnhancedNavigationBar';
+import AmbientBackdrop from './AmbientBackdrop';
 import {
   type Section,
   NAVIGATION_EVENT_NAME,
-  TIME_UPDATE_INTERVAL,
 } from './constants';
 import {
   getInitialSection,
@@ -20,31 +18,22 @@ import {
 
 export default function AppContent() {
   const [currentSection, setCurrentSection] = useState<Section>(() => getInitialSection());
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
-
   const { isOnline } = useContent();
   const { currentLanguage, isZh } = useLanguage();
 
-  const sections = [
+  const sections = useMemo(() => [
     { id: 'home' as Section, title: isZh ? '首页' : 'Home', icon: 'monitor' },
     { id: 'projects' as Section, title: isZh ? '项目' : 'Projects', icon: 'activity' },
-    { id: 'ai-explore' as Section, title: isZh ? 'AI探索' : 'AI Explore', icon: 'zap' },
+    { id: 'ai-explore' as Section, title: isZh ? 'AI 探索' : 'AI Explore', icon: 'zap' },
     { id: 'blog' as Section, title: isZh ? '博客' : 'Blog', icon: 'terminal' },
     { id: 'interests' as Section, title: isZh ? '兴趣' : 'Interests', icon: 'globe' },
     { id: 'contact' as Section, title: isZh ? '联系' : 'Contact', icon: 'globe' },
-  ];
+  ], [isZh]);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setCurrentTime(new Date()), TIME_UPDATE_INTERVAL);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const navigateToSection = (section: Section) => {
+  const navigateToSection = useCallback((section: Section) => {
     setCurrentSection(section);
-    setIsMobileMenuOpen(false);
     updateBrowserHistory(section);
-  };
+  }, []);
 
   useEffect(() => {
     setLanguageAttribute(currentLanguage);
@@ -66,37 +55,27 @@ export default function AppContent() {
       window.removeEventListener(NAVIGATION_EVENT_NAME, handleNavigate);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [currentLanguage]);
+  }, [currentLanguage, navigateToSection]);
 
   return (
-    <div className="min-h-screen text-green-400 font-terminal">
-      <div className="h-screen flex flex-col">
+    <div className="portfolio-shell">
+      <AmbientBackdrop />
+      <div className="portfolio-shell__frame">
         <TerminalHeader isZh={isZh} isOnline={isOnline} />
 
         <EnhancedNavigationBar
           activeSection={currentSection}
           onSectionChange={navigateToSection}
           sections={sections}
-          isMobileMenuOpen={isMobileMenuOpen}
           showQuickActions
           enableSearch
           enableThemeToggle
         />
 
-        <main id="main-content" role="main" tabIndex={-1} className="flex-1 min-h-0 overflow-hidden">
+        <main id="main-content" role="main" tabIndex={-1} className="portfolio-main">
           <PageRenderer currentSection={currentSection} />
         </main>
-
-        <CRTEffects />
       </div>
-
-      <AccessibilityEnhancer
-        showControls
-        autoDetect
-        onSettingsChange={(settings) => {
-          localStorage.setItem('accessibility-settings', JSON.stringify(settings));
-        }}
-      />
     </div>
   );
 }

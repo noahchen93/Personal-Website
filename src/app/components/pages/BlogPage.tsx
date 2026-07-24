@@ -444,7 +444,7 @@ export default function BlogPage() {
         </div>
         
         {/* Blog Posts */}
-        <div className="space-y-6">
+        <div className="blog-grid">
           {posts.map((post) => {
             const data = post.data;
             
@@ -452,7 +452,7 @@ export default function BlogPage() {
               <article
                 key={`${post.id}-${currentLanguage}`}
                 id={post.id}
-                className="glass-green rounded-lg p-6 transition-all duration-300 hover:transform hover:-translate-y-1 group"
+                className="blog-card glass-green rounded-lg p-6 transition-all duration-300 hover:transform hover:-translate-y-1 group"
               >
                 {/* Post Header */}
                 <header className="mb-4">
