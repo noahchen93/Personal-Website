@@ -1130,7 +1130,7 @@ export default function HomePage() {
                   )}
                 </div>
                 
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {displayedWorkExperience?.map((work, index) => (
                     <div key={index} className="relative pl-6 group/work">
                       {/* 时间轴线条 */}
