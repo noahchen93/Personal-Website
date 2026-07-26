@@ -4368,9 +4368,25 @@ a:focus-visible,
   margin-bottom: 0 !important;
 }
 
+/* Work experience cards need an explicit grid gap because the legacy terminal
+   margin reset overrides Tailwind's space-y utilities inside portfolio pages. */
+.portfolio-page__content .work-experience-list {
+  display: grid;
+  gap: clamp(32px, 3vw, 44px);
+}
+
+.portfolio-page__content .work-experience-list > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 @media (max-width: 767px) {
   .portfolio-page__content {
     --portfolio-card-gap: 20px;
     --portfolio-section-gap: 24px;
+  }
+
+  .portfolio-page__content .work-experience-list {
+    gap: 24px;
   }
 }
