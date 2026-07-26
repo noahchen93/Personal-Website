@@ -3515,19 +3515,27 @@ a:focus-visible,
   min-height: 0 !important;
   overflow: hidden;
   padding: 0 !important;
-  background: rgba(255, 255, 255, 0.025);
+  background:
+    linear-gradient(rgba(8, 12, 20, 0.2), rgba(8, 12, 20, 0.2)),
+    var(--image-placeholder-color, rgb(15 20 30));
+}
+
+.unified-image-picture {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .unified-image {
-  display: block;
+  display: block !important;
   width: 100%;
   max-width: 100% !important;
   min-height: 0 !important;
   margin: 0;
   color: transparent;
   transition:
-    opacity 500ms var(--portfolio-ease),
-    transform 700ms var(--portfolio-ease);
+    opacity 220ms var(--portfolio-ease),
+    transform 420ms var(--portfolio-ease);
 }
 
 .unified-image--fade {
@@ -3536,6 +3544,64 @@ a:focus-visible,
 
 .unified-image-container.is-loaded .unified-image--fade {
   opacity: 1;
+}
+
+.showcase-image-frame {
+  display: grid;
+  width: 100%;
+  place-items: center;
+  background: rgb(15 20 30);
+}
+
+.showcase-image-frame > .unified-image-container {
+  min-height: 250px !important;
+}
+
+.page-loading-state {
+  display: grid;
+  min-height: 160px;
+  place-content: center;
+  gap: 14px;
+  color: var(--portfolio-text-secondary);
+  font-family: var(--font-terminal);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.page-loading-state__bar {
+  position: relative;
+  width: min(160px, 46vw);
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.page-loading-state__bar::after {
+  position: absolute;
+  inset: 0;
+  width: 46%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--portfolio-blue), transparent);
+  content: '';
+  animation: page-loading-progress 1.1s ease-in-out infinite;
+}
+
+@keyframes page-loading-progress {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(240%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loading-state__bar::after {
+    animation: none;
+    transform: translateX(58%);
+  }
 }
 
 .unified-image__loader {

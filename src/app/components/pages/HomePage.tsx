@@ -7,6 +7,7 @@ import UnifiedImage from '../shared/UnifiedImage';
 import AIChatBox from '../chat/AIChatBox';
 import { imageService, URLValidator } from '../../utils/ImageService';
 import { usePageLanguageSync } from '../shared/useLanguageSync';
+import PageLoadingState from '../shared/PageLoadingState';
 import EnhancedLazyLoader, { LazyHero, LazyCard } from '../shared/EnhancedLazyLoader';
 import AnimationSystem, { StaggerContainer, FadeIn, SlideUp, ScaleIn } from '../shared/AnimationSystem';
 import { SmartImage, useResourcePreloader } from '../shared/SmartPerformanceManager';
@@ -66,6 +67,8 @@ interface HomeData {
   skills?: string[];
   navigationButtons?: NavigationButton[];
 }
+
+const SHOWCASE_AUTOPLAY_LIMIT = 5;
 
 export default function HomePage() {
   const { 
@@ -595,20 +598,37 @@ export default function HomePage() {
   // 自动轮播
   useEffect(() => {
     if (!isAutoPlaying || unifiedContentItems.length === 0) return;
-    
-    const currentItem = unifiedContentItems[currentContentIndex];
-    const displayTime = currentItem?.featured ? 8000 : 5000;
-    
-    const timer = setInterval(() => {
-      setCurrentContentIndex((prev) => (prev + 1) % unifiedContentItems.length);
-    }, displayTime);
 
-    return () => clearInterval(timer);
+    const autoplayItemCount = Math.min(unifiedContentItems.length, SHOWCASE_AUTOPLAY_LIMIT);
+    if (autoplayItemCount <= 1) return;
+
+    let timer: number | undefined;
+
+    const scheduleNext = () => {
+      if (timer) window.clearTimeout(timer);
+      if (document.hidden) return;
+
+      const currentItem = unifiedContentItems[currentContentIndex];
+      const displayTime = currentItem?.featured ? 8000 : 5000;
+      timer = window.setTimeout(() => {
+        setCurrentContentIndex((prev) => (prev + 1) % autoplayItemCount);
+      }, displayTime);
+    };
+
+    const handleVisibilityChange = () => scheduleNext();
+    scheduleNext();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [isAutoPlaying, unifiedContentItems.length, currentContentIndex]);
 
   // 重置轮播索引
   useEffect(() => {
-    if (unifiedContentItems.length > 0 && currentContentIndex >= unifiedContentItems.length) {
+    const availableShowcaseItems = Math.min(unifiedContentItems.length, SHOWCASE_AUTOPLAY_LIMIT);
+    if (availableShowcaseItems > 0 && currentContentIndex >= availableShowcaseItems) {
       setCurrentContentIndex(0);
     }
   }, [unifiedContentItems.length, currentContentIndex]);
@@ -857,49 +877,7 @@ export default function HomePage() {
   }, [isWorkExpanded, shouldCollapseWork, displayedWorkExperience?.length, homeData.workExperience?.length]);
 
   if (isLoading) {
-    return (
-      <div className="p-6 space-y-8 font-terminal text-green-400 custom-scrollbar">
-        <div className="max-w-7xl mx-auto">
-          <div className="glass-blue rounded-xl p-8 transition-all duration-300 mb-8">
-            <div className="flex items-center space-x-3 mb-6">
-              <Terminal className="w-6 h-6 text-blue-200" />
-              <h1 className="text-large text-white tracking-wide">
-                [HOME] {isZh ? '主页' : 'Home Page'}
-              </h1>
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="glass-blue rounded-xl p-6">
-                <div className="h-6 bg-gray-700/50 mb-4 w-1/3 animate-pulse rounded-xl"></div>
-                <div className="h-4 bg-gray-800/50 mb-2 animate-pulse rounded-xl"></div>
-                <div className="h-4 bg-gray-800/50 w-3/4 animate-pulse rounded-xl"></div>
-              </div>
-              <div className="glass-orange rounded-xl p-6">
-                <div className="h-5 bg-gray-700/50 mb-4 w-1/4 animate-pulse rounded-xl"></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="h-48 bg-gray-700/50 animate-pulse rounded-xl"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-800/50 animate-pulse rounded-xl"></div>
-                    <div className="h-4 bg-gray-800/50 w-3/4 animate-pulse rounded-xl"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-6">
-              <div className="glass-cyan rounded-xl p-6">
-                <div className="h-5 bg-gray-700/50 mb-4 w-1/2 animate-pulse rounded-xl"></div>
-                <div className="space-y-3">
-                  <div className="h-12 bg-gray-800/50 animate-pulse rounded-xl"></div>
-                  <div className="h-12 bg-gray-800/50 animate-pulse rounded-xl"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoadingState label={isZh ? '正在加载主页…' : 'Loading home…'} />;
   }
 
   return (
@@ -962,7 +940,7 @@ export default function HomePage() {
                     {/* 左侧图片 - 移除所有标签 */}
                     <div className="relative homepage-showcase-image">
                       {unifiedContentItems[currentContentIndex].imageUrl ? (
-                        <div className="unified-image-container bg-black/20 rounded-xl overflow-hidden" style={{ minHeight: '250px', maxHeight: '400px' }}>
+                        <div className="showcase-image-frame rounded-xl overflow-hidden" style={{ minHeight: '250px', maxHeight: '400px' }}>
                           <UnifiedImage
                             src={unifiedContentItems[currentContentIndex].imageUrl}
                             alt={unifiedContentItems[currentContentIndex].title}
@@ -973,7 +951,9 @@ export default function HomePage() {
                               objectFit: 'contain',
                               objectPosition: 'center'
                             }}
-                            lazy={false}
+                            lazy={currentContentIndex !== 0}
+                            fetchPriority={currentContentIndex === 0 ? 'high' : 'auto'}
+                            sizes="(max-width: 767px) calc(100vw - 48px), 50vw"
                             showLoadingSpinner={true}
                             allImages={allImages}
                             getImageUrl={getImageUrl}

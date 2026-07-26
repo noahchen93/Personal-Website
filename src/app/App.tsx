@@ -1,4 +1,5 @@
 import React from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ContentProvider } from './components/content/ContentContext';
 import { LanguageProvider } from './components/language/LanguageContext';
 import AppContent from './components/app/AppContent';
@@ -13,6 +14,7 @@ export default function App() {
           <ContentProvider>
             <AppContent />
             <Toaster />
+            <SpeedInsights />
           </ContentProvider>
         </LanguageProvider>
       </ErrorBoundary>

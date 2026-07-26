@@ -6,6 +6,7 @@ import { useLanguage, useTexts } from '../language/LanguageContext';
 import UnifiedImage from '../shared/UnifiedImage';
 import { imageService, URLValidator } from '../../utils/ImageService';
 import { usePageLanguageSync } from '../shared/useLanguageSync';
+import PageLoadingState from '../shared/PageLoadingState';
 
 
 function BlogPostContent({ 
@@ -324,31 +325,7 @@ export default function BlogPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="p-6 space-y-8 font-terminal text-green-400 custom-scrollbar">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="glass-green rounded-lg p-8">
-            <div className="h-8 bg-gray-700/50 rounded mb-4 w-1/3 animate-pulse"></div>
-            <div className="h-4 bg-gray-800/50 rounded mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-800/50 rounded w-2/3 animate-pulse"></div>
-          </div>
-
-          {/* Post Skeletons */}
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="glass-green rounded-lg p-6">
-              <div className="h-6 bg-gray-700/50 rounded mb-4 w-3/4 animate-pulse"></div>
-              <div className="h-4 bg-gray-800/50 rounded mb-2 animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="h-3 bg-gray-800/50 rounded animate-pulse"></div>
-                <div className="h-3 bg-gray-800/50 rounded w-5/6 animate-pulse"></div>
-                <div className="h-3 bg-gray-800/50 rounded w-4/6 animate-pulse"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <PageLoadingState label={isZh ? '正在加载博客…' : 'Loading blog…'} />;
   }
 
   if (error) {

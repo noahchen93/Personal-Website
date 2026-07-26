@@ -6,6 +6,7 @@ import MediaRenderer from '../shared/MediaRenderer';
 import UnifiedImage from '../shared/UnifiedImage';
 import { imageService, URLValidator } from '../../utils/ImageService';
 import { usePageLanguageSync } from '../shared/useLanguageSync';
+import PageLoadingState from '../shared/PageLoadingState';
 
 interface ProjectData {
   title: string;
@@ -419,40 +420,7 @@ export default function ProjectsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="page-section">
-        <div className="portfolio-grid">
-          {/* Header Skeleton */}
-          <div className="page-intro portfolio-skeleton">
-            <div className="h-8 bg-gray-700/50 rounded-xl mb-4 w-1/3 animate-pulse"></div>
-            <div className="h-4 bg-gray-800/50 rounded-xl mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-800/50 rounded-xl w-2/3 animate-pulse"></div>
-          </div>
-
-          {/* Project Skeletons */}
-          <div className="project-grid">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="project-card glass-orange overflow-hidden">
-              <div className="project-card__layout">
-                <div className="project-card__media bg-gray-700/50 animate-pulse"></div>
-                <div className="project-card__body space-y-4">
-                  <div className="h-6 bg-gray-700/50 rounded-xl w-3/4 animate-pulse"></div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-gray-800/50 rounded-xl animate-pulse"></div>
-                    <div className="h-3 bg-gray-800/50 rounded-xl w-5/6 animate-pulse"></div>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="h-6 bg-gray-800/50 rounded-xl w-16 animate-pulse"></div>
-                    <div className="h-6 bg-gray-800/50 rounded-xl w-20 animate-pulse"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoadingState label={isZh ? '正在加载项目…' : 'Loading projects…'} />;
   }
 
   return (

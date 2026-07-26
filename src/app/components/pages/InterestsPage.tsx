@@ -4,6 +4,7 @@ import { useContent, ContentItem } from '../content/ContentContext';
 import { useLanguage, useTexts } from '../language/LanguageContext';
 import InterestCard from './interests/InterestCard';
 import ReadingMode from './interests/ReadingMode';
+import PageLoadingState from '../shared/PageLoadingState';
 
 // 终端提示符常量 - 移到组件外部避免重新创建
 const TERMINAL_PROMPT = '> ';
@@ -128,29 +129,7 @@ export default function InterestsPage() {
 
   // 加载状态
   if (isLoading) {
-    return (
-      <div className="p-6 space-y-8 font-terminal terminal-text custom-scrollbar">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="glass-pink rounded-xl p-8">
-            <div className="h-8 bg-gray-700/50 rounded-xl mb-4 w-1/3 animate-pulse"></div>
-            <div className="h-4 bg-gray-800/50 rounded-xl mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-800/50 rounded-xl w-2/3 animate-pulse"></div>
-          </div>
-
-          {/* Interest Skeletons */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="glass-pink rounded-xl p-6">
-                <div className="h-48 bg-gray-700/50 rounded-xl mb-4 animate-pulse"></div>
-                <div className="h-6 bg-gray-700/50 rounded-xl mb-2 animate-pulse"></div>
-                <div className="h-4 bg-gray-800/50 rounded-xl w-3/4 animate-pulse"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoadingState label={isZh ? '正在加载兴趣内容…' : 'Loading interests…'} />;
   }
 
   // 错误状态
